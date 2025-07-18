@@ -1,0 +1,198 @@
+
+{% extends 'base.html' %}
+
+{% block title %}PDV - Web Loja | Unbug Solutions TI{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1 class="mb-3"><i class="fas fa-cash-register me-2"></i>PDV - Ponto de Venda</h1>
+        <p class="text-muted">Sistema de vendas e pagamentos.</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('inventory.store') }}" class="btn btn-secondary">
+            <i class="fas fa-store me-2"></i>Voltar à Loja
+        </a>
+    </div>
+</div>
+
+<!-- Search Items -->
+<div class="card shadow mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-search me-2"></i>Buscar Itens</h5>
+    </div>
+    <div class="card-body">
+        <div class="input-group mb-3">
+            <input type="text" id="itemSearch" class="form-control" placeholder="Digite o nome ou SKU do item...">
+            <button class="btn btn-primary" type="button" onclick="searchItems()">
+                <i class="fas fa-search me-1"></i>Buscar
+            </button>
+        </div>
+        <div id="searchResults" class="list-group">
+            <!-- Search results will be populated here -->
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Cart Items -->
+    <div class="col-md-8">
+        <div class="card shadow mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-shopping-cart me-2"></i>Carrinho</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table" id="cartTable">
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th>Quantidade</th>
+                                <th>Preço Unit.</th>
+                                <th>Total</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cartItems">
+                        </tbody>
+                    </table>
+                </div>
+                <div class="text-end">
+                    <h4>Total: R$ <span id="cartTotal">0.00</span></h4>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Section -->
+    <div class="col-md-4">
+        <div class="card shadow mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-money-bill me-2"></i>Pagamento</h5>
+            </div>
+            <div class="card-body">
+                <form id="paymentForm" method="post" action="{{ url_for('inventory.process_sale') }}">
+                    <div class="mb-3">
+                        <label class="form-label">Método de Pagamento</label>
+                        <select class="form-select" name="payment_method" required>
+                            <option value="money">Dinheiro</option>
+                            <option value="credit_card">Cartão de Crédito</option>
+                            <option value="debit_card">Cartão de Débito</option>
+                            <option value="pix">PIX</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Cliente</label>
+                        <select class="form-select" name="client_id">
+                            <option value="">Selecione o cliente</option>
+                            {% for client in clients %}
+                            <option value="{{ client.id }}">{{ client.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <input type="hidden" name="cart_items" id="cartItemsInput">
+                    <button type="submit" class="btn btn-success w-100" id="finishSaleBtn">
+                        <i class="fas fa-check me-2"></i>Finalizar Venda
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let cart = [];
+
+async function searchItems() {
+    const searchTerm = document.getElementById('itemSearch').value;
+    if (!searchTerm) return;
+
+    try {
+        const response = await fetch(`/inventory/search-items?query=${encodeURIComponent(searchTerm)}`);
+        const items = await response.json();
+        
+        const resultsDiv = document.getElementById('searchResults');
+        resultsDiv.innerHTML = items.map(item => `
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="mb-1">${item.name}</h6>
+                    <small class="text-muted">SKU: ${item.sku} | Estoque: ${item.quantity}</small>
+                </div>
+                <button class="btn btn-sm btn-success" onclick="addToCart(${item.id}, '${item.name}', ${item.unit_price}, 'inventory')" ${item.quantity < 1 ? 'disabled' : ''}>
+                    <i class="fas fa-plus me-1"></i>Adicionar
+                </button>
+            </div>
+        `).join('') || '<div class="list-group-item">Nenhum item encontrado</div>';
+    } catch (error) {
+        console.error('Error searching items:', error);
+    }
+}
+
+// Add event listener for enter key on search input
+document.getElementById('itemSearch').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        searchItems();
+    }
+});
+
+function addToCart(itemId, name, price, type) {
+    const existingItem = cart.find(item => item.id === itemId && item.type === type);
+    if (existingItem) {
+        existingItem.quantity++;
+    } else {
+        cart.push({
+            id: itemId,
+            name: name,
+            price: price,
+            quantity: 1,
+            type: type
+        });
+    }
+    updateCart();
+}
+
+function removeFromCart(index) {
+    cart.splice(index, 1);
+    updateCart();
+}
+
+function updateQuantity(index, change) {
+    cart[index].quantity = Math.max(1, cart[index].quantity + change);
+    updateCart();
+}
+
+function updateCart() {
+    const tbody = document.getElementById('cartItems');
+    const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    
+    tbody.innerHTML = cart.map((item, index) => `
+        <tr>
+            <td>${item.name}</td>
+            <td>
+                <div class="btn-group">
+                    <button class="btn btn-sm btn-outline-secondary" onclick="updateQuantity(${index}, -1)">-</button>
+                    <span class="btn btn-sm">${item.quantity}</span>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="updateQuantity(${index}, 1)">+</button>
+                </div>
+            </td>
+            <td>R$ ${item.price.toFixed(2)}</td>
+            <td>R$ ${(item.price * item.quantity).toFixed(2)}</td>
+            <td>
+                <button class="btn btn-sm btn-danger" onclick="removeFromCart(${index})">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('');
+    
+    document.getElementById('cartTotal').textContent = total.toFixed(2);
+    document.getElementById('cartItemsInput').value = JSON.stringify(cart);
+    
+    // Enable/disable finish button based on cart contents
+    document.getElementById('finishSaleBtn').disabled = cart.length === 0;
+}
+
+// Initialize cart
+updateCart();
+</script>
+{% endblock %}

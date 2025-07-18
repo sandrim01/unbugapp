@@ -1,0 +1,123 @@
+
+{% extends 'base.html' %}
+
+{% block title %}Relatórios - Unbug Solutions TI{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="mt-4 mb-4">Relatórios</h1>
+    
+    <div class="row">
+        <div class="col-xl-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-file-alt me-2"></i>Relatórios Disponíveis</h6>
+                </div>
+                <div class="card-body">
+                    <p>Selecione o tipo de relatório que deseja visualizar ou exportar:</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Relatório de Finanças -->
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-header py-3 bg-primary text-white">
+                    <h6 class="m-0 font-weight-bold"><i class="fas fa-chart-line me-2"></i>Relatório Financeiro</h6>
+                </div>
+                <div class="card-body">
+                    <p>Visualize e exporte dados financeiros como receitas, despesas, saldo e transações por período.</p>
+                    <a href="{{ url_for('reports.finance') }}" class="btn btn-primary btn-sm mt-3">
+                        <i class="fas fa-eye me-1"></i> Visualizar
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Relatório de Ordens de Serviço -->
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-header py-3 bg-success text-white">
+                    <h6 class="m-0 font-weight-bold"><i class="fas fa-tools me-2"></i>Relatório de Ordens de Serviço</h6>
+                </div>
+                <div class="card-body">
+                    <p>Acompanhe as ordens de serviço por período, status, cliente e responsável.</p>
+                    <a href="{{ url_for('reports.orders') }}" class="btn btn-success btn-sm mt-3">
+                        <i class="fas fa-eye me-1"></i> Visualizar
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Relatório de Projetos -->
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-header py-3 bg-info text-white">
+                    <h6 class="m-0 font-weight-bold"><i class="fas fa-project-diagram me-2"></i>Relatório de Projetos</h6>
+                </div>
+                <div class="card-body">
+                    <p>Analise o status dos projetos, orçamentos, prazos e distribuição por clientes.</p>
+                    <a href="{{ url_for('reports.projects') }}" class="btn btn-info btn-sm mt-3">
+                        <i class="fas fa-eye me-1"></i> Visualizar
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Relatório de Estoque -->
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-header py-3 bg-warning text-dark">
+                    <h6 class="m-0 font-weight-bold"><i class="fas fa-boxes me-2"></i>Relatório de Estoque</h6>
+                </div>
+                <div class="card-body">
+                    <p>Verifique itens em estoque, itens com estoque baixo e valor total do inventário.</p>
+                    <a href="{{ url_for('reports.stock') }}" class="btn btn-warning btn-sm mt-3">
+                        <i class="fas fa-eye me-1"></i> Visualizar
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Relatório de Clientes -->
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-header py-3 bg-secondary text-white">
+                    <h6 class="m-0 font-weight-bold"><i class="fas fa-users me-2"></i>Relatório de Clientes</h6>
+                </div>
+                <div class="card-body">
+                    <p>Analise a base de clientes, distribuição geográfica e envolvimento em projetos e serviços.</p>
+                    <a href="{{ url_for('reports.clients') }}" class="btn btn-secondary btn-sm mt-3">
+                        <i class="fas fa-eye me-1"></i> Visualizar
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Guia de Uso de Relatórios -->
+    <div class="row mt-3">
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-info-circle me-2"></i>Guia de Uso</h6>
+                </div>
+                <div class="card-body">
+                    <h6>Como usar os relatórios:</h6>
+                    <ol>
+                        <li>Selecione o tipo de relatório que deseja visualizar</li>
+                        <li>Aplique filtros disponíveis como período, status, categoria, etc.</li>
+                        <li>Visualize os dados na tela ou exporte para Excel usando o botão "Exportar"</li>
+                        <li>Analise gráficos e tabelas para insights sobre os dados</li>
+                    </ol>
+                    <div class="alert alert-info">
+                        <i class="fas fa-lightbulb"></i> <strong>Dica:</strong> Exporte relatórios regularmente para backup e análise offline de dados importantes da empresa.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

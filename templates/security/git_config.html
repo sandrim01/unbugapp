@@ -1,0 +1,57 @@
+
+{% extends 'base.html' %}
+
+{% block title %}Configuração do Git - Unbug Solutions TI{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fab fa-git-alt me-2"></i>Configuração do Git</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>Configure suas credenciais do Git para permitir commits e pushes automáticos quando itens forem adicionados ou atualizados no sistema.
+                    </div>
+                    
+                    <form method="POST" action="{{ url_for('security.git_config') }}">
+                        <div class="mb-3">
+                            <label for="git_username" class="form-label">Nome de Usuário Git</label>
+                            <input type="text" class="form-control" id="git_username" name="git_username" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="git_email" class="form-label">Email Git</label>
+                            <input type="email" class="form-control" id="git_email" name="git_email" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="git_repo" class="form-label">URL do Repositório</label>
+                            <input type="text" class="form-control" id="git_repo" name="git_repo" 
+                                   placeholder="https://github.com/seu-usuario/seu-repositorio.git">
+                            <div class="form-text">URL completa do repositório Git.</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="git_token" class="form-label">Token de Acesso</label>
+                            <input type="password" class="form-control" id="git_token" name="git_token">
+                            <div class="form-text">Token de acesso pessoal para repositórios privados. Para GitHub, crie um token em Settings -> Developer settings -> Personal access tokens.</div>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Salvar Configurações
+                            </button>
+                            <a href="{{ url_for('security.config') }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Voltar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,294 @@
+
+{% extends 'base.html' %}
+
+{% block title %}Relatório de Ordens de Serviço - Unbug Solutions TI{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="mt-4 mb-3">Relatório de Ordens de Serviço</h1>
+    
+    <!-- Filtros -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-filter me-2"></i>Filtros</h6>
+        </div>
+        <div class="card-body">
+            <form method="GET" action="{{ url_for('reports.orders') }}" class="row g-3">
+                <div class="col-md-3">
+                    <label for="start_date" class="form-label">Data Inicial</label>
+                    <input type="date" class="form-control" id="start_date" name="start_date" value="{{ start_date }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="end_date" class="form-label">Data Final</label>
+                    <input type="date" class="form-control" id="end_date" name="end_date" value="{{ end_date }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="status" class="form-label">Status</label>
+                    <select class="form-select" id="status" name="status">
+                        <option value="" {% if not status %}selected{% endif %}>Todos</option>
+                        <option value="open" {% if status == 'open' %}selected{% endif %}>Aberta</option>
+                        <option value="in_progress" {% if status == 'in_progress' %}selected{% endif %}>Em Progresso</option>
+                        <option value="completed" {% if status == 'completed' %}selected{% endif %}>Concluída</option>
+                        <option value="cancelled" {% if status == 'cancelled' %}selected{% endif %}>Cancelada</option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Resumo -->
+    <div class="row">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total de Ordens</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_orders }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Em Andamento</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ status_counts.open + status_counts.in_progress }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-tasks fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Concluídas</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ status_counts.completed }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Canceladas</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ status_counts.cancelled }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-times-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Gráficos -->
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Status das Ordens de Serviço</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-pie pt-4">
+                        <canvas id="orderStatusChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Top Clientes</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-bar pt-4">
+                        <canvas id="clientOrdersChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Lista de Ordens -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-list me-2"></i>Ordens de Serviço</h6>
+            <a href="{{ url_for('reports.export_orders', start_date=start_date, end_date=end_date, status=status) }}" class="btn btn-sm btn-success">
+                <i class="fas fa-file-excel me-1"></i> Exportar para Excel
+            </a>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Título</th>
+                            <th>Cliente</th>
+                            <th>Responsável</th>
+                            <th>Status</th>
+                            <th>Prioridade</th>
+                            <th>Data de Início</th>
+                            <th>Data de Conclusão</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in orders %}
+                        <tr>
+                            <td>{{ order.id }}</td>
+                            <td>{{ order.title }}</td>
+                            <td>
+                                {% if order.client %}
+                                    {{ order.client.name }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if order.employee %}
+                                    {{ order.employee.full_name }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if order.status == 'open' %}
+                                    <span class="badge bg-primary">Aberta</span>
+                                {% elif order.status == 'in_progress' %}
+                                    <span class="badge bg-info">Em Progresso</span>
+                                {% elif order.status == 'completed' %}
+                                    <span class="badge bg-success">Concluída</span>
+                                {% elif order.status == 'cancelled' %}
+                                    <span class="badge bg-danger">Cancelada</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if order.priority == 'low' %}
+                                    <span class="badge bg-secondary">Baixa</span>
+                                {% elif order.priority == 'medium' %}
+                                    <span class="badge bg-info">Média</span>
+                                {% elif order.priority == 'high' %}
+                                    <span class="badge bg-warning">Alta</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ order.start_date.strftime('%d/%m/%Y') }}</td>
+                            <td>{{ order.completion_date.strftime('%d/%m/%Y') if order.completion_date else '-' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Order Status Chart
+    const orderStatusChart = document.getElementById('orderStatusChart');
+    if (orderStatusChart) {
+        new Chart(orderStatusChart, {
+            type: 'pie',
+            data: {
+                labels: ['Abertas', 'Em Progresso', 'Concluídas', 'Canceladas'],
+                datasets: [{
+                    data: [
+                        {{ status_counts.open }}, 
+                        {{ status_counts.in_progress }}, 
+                        {{ status_counts.completed }}, 
+                        {{ status_counts.cancelled }}
+                    ],
+                    backgroundColor: ['#4e73df', '#36b9cc', '#1cc88a', '#e74a3b'],
+                    hoverBackgroundColor: ['#2e59d9', '#2c9faf', '#17a673', '#be2617'],
+                    hoverBorderColor: "rgba(234, 236, 244, 1)",
+                }],
+            },
+            options: {
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    }
+    
+    // Client Orders Chart
+    const clientOrdersChart = document.getElementById('clientOrdersChart');
+    if (clientOrdersChart) {
+        const clients = [];
+        const counts = [];
+        
+        {% for client in client_orders %}
+            clients.push("{{ client.name }}");
+            counts.push({{ client.count }});
+        {% endfor %}
+        
+        new Chart(clientOrdersChart, {
+            type: 'bar',
+            data: {
+                labels: clients,
+                datasets: [{
+                    label: 'Ordens',
+                    data: counts,
+                    backgroundColor: '#4e73df',
+                    borderColor: '#4e73df',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

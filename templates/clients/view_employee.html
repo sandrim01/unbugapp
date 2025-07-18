@@ -1,0 +1,172 @@
+
+{% extends 'base.html' %}
+
+{% block title %}{{ employee.full_name }} | Unbug Solutions TI{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="mt-4">{{ employee.full_name }}</h1>
+            <p class="text-muted">{{ employee.position }} - {{ employee.department }}</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{{ url_for('employees.index') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Informações Básicas -->
+        <div class="col-md-4 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-user-circle me-2"></i>Informações Básicas</h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <div class="avatar-circle mx-auto">
+                            <span class="initials">{{ employee.first_name[0] }}{{ employee.last_name[0] }}</span>
+                        </div>
+                    </div>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">
+                            <strong>Nome Completo:</strong><br>
+                            {{ employee.full_name }}
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Cargo:</strong><br>
+                            {{ employee.position }}
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Departamento:</strong><br>
+                            {{ employee.department }}
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Telefone:</strong><br>
+                            {{ employee.phone }}
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Status:</strong><br>
+                            <span class="badge {% if employee.active %}bg-success{% else %}bg-danger{% endif %}">
+                                {% if employee.active %}Ativo{% else %}Inativo{% endif %}
+                            </span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Informações Profissionais -->
+        <div class="col-md-4 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-briefcase me-2"></i>Informações Profissionais</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">
+                            <strong>Data de Contratação:</strong><br>
+                            {{ employee.hire_date.strftime('%d/%m/%Y') }}
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Data de Cadastro:</strong><br>
+                            {{ employee.created_at.strftime('%d/%m/%Y') }}
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Última Atualização:</strong><br>
+                            {{ employee.updated_at.strftime('%d/%m/%Y') }}
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Email Profissional:</strong><br>
+                            {% if employee.user %}
+                                {{ employee.user.email }}
+                            {% else %}
+                                Não cadastrado
+                            {% endif %}
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Acesso ao Sistema -->
+        <div class="col-md-4 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-key me-2"></i>Acesso ao Sistema</h5>
+                </div>
+                <div class="card-body">
+                    {% if employee.user %}
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item">
+                                <strong>Nome de Usuário:</strong><br>
+                                {{ employee.user.username }}
+                            </li>
+                            <li class="list-group-item">
+                                <strong>Nível de Acesso:</strong><br>
+                                {% if employee.user.role == 'admin' %}
+                                    <span class="badge bg-danger">Administrador</span>
+                                {% elif employee.user.role == 'management' %}
+                                    <span class="badge bg-warning text-dark">Gerência</span>
+                                {% else %}
+                                    <span class="badge bg-primary">Funcionário</span>
+                                {% endif %}
+                            </li>
+                            <li class="list-group-item">
+                                <strong>Status da Conta:</strong><br>
+                                <span class="badge {% if employee.user.is_active %}bg-success{% else %}bg-danger{% endif %}">
+                                    {% if employee.user.is_active %}Ativa{% else %}Inativa{% endif %}
+                                </span>
+                            </li>
+                            <li class="list-group-item">
+                                <strong>Último Login:</strong><br>
+                                {% if employee.user.last_login %}
+                                    {{ employee.user.last_login.strftime('%d/%m/%Y %H:%M') }}
+                                {% else %}
+                                    Nunca acessou
+                                {% endif %}
+                            </li>
+                        </ul>
+                    {% else %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Este funcionário não possui credenciais de acesso ao sistema.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.avatar-circle {
+    width: 120px;
+    height: 120px;
+    background-color: #007bff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+}
+
+.initials {
+    font-size: 48px;
+    color: white;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.list-group-item {
+    padding: 1rem;
+}
+
+.badge {
+    font-size: 0.9rem;
+    padding: 0.5rem 1rem;
+}
+</style>
+{% endblock %}

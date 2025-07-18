@@ -1,0 +1,217 @@
+{% extends 'base.html' %}
+
+{% block title %}Funcionários | Unbug Solutions TI{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1 class="mb-3"><i class="fas fa-id-card me-2"></i>Funcionários</h1>
+        <p class="text-muted">Gerencie a equipe da empresa.</p>
+    </div>
+    <div class="col-md-4 text-end">
+        {% if current_user.is_management() %}
+        <a href="{{ url_for('employees.create') }}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>Novo Funcionário
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Search Form -->
+<div class="card shadow mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-search me-2"></i>Buscar Funcionários</h5>
+    </div>
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('employees.index') }}">
+            <div class="row">
+                <div class="col-md-8 mb-3">
+                    <label for="query" class="form-label">Buscar por Nome/Cargo/Departamento</label>
+                    {{ search_form.query(class="form-control", value=request.args.get('query', '')) }}
+                </div>
+                <div class="col-md-4 mb-3 d-flex align-items-end">
+                    {{ search_form.submit(class="btn btn-primary w-100") }}
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Employees Table -->
+<div class="card shadow">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-list me-2"></i>Lista de Funcionários</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Cargo</th>
+                        <th>Departamento</th>
+                        <th>Telefone</th>
+                        <th>Data de Contratação</th>
+                        <th>Status</th>
+                        <th>Acesso</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if employees %}
+                        {% for employee in employees %}
+                        <tr>
+                            <td>
+                                <a href="{{ url_for('employees.view', employee_id=employee.id) }}">
+                                    {{ employee.full_name }}
+                                </a>
+                            </td>
+                            <td>{{ employee.position }}</td>
+                            <td>{{ employee.department }}</td>
+                            <td>{{ employee.phone }}</td>
+                            <td>{{ employee.hire_date.strftime('%d/%m/%Y') }}</td>
+                            <td>
+                                {% if employee.active %}
+                                    <span class="badge bg-success">Ativo</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Inativo</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if employee.user %}
+                                    {% if employee.user.role == 'admin' %}
+                                        <span class="badge bg-danger">Admin</span>
+                                    {% elif employee.user.role == 'management' %}
+                                        <span class="badge bg-warning text-dark">Gerência</span>
+                                    {% else %}
+                                        <span class="badge bg-primary">Funcionário</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="badge bg-secondary">Sem Acesso</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{{ url_for('employees.view', employee_id=employee.id) }}" class="btn btn-sm btn-info" title="Visualizar">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    {% if current_user.is_management() %}
+                                    <a href="{{ url_for('employees.edit', employee_id=employee.id) }}" class="btn btn-sm btn-warning" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    {% endif %}
+                                    {% if current_user.is_admin() %}
+                                    <form action="{{ url_for('employees.delete', employee_id=employee.id) }}" method="post" class="d-inline" onsubmit="return confirm('Tem certeza que deseja excluir este funcionário?\nEsta ação não pode ser desfeita!');">
+                                        <button type="submit" class="btn btn-sm btn-danger" title="Excluir">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="8" class="text-center">Nenhum funcionário encontrado.</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Department Statistics -->
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Estatísticas por Departamento</h5>
+            </div>
+            <div class="card-body">
+                {% set departments = {} %}
+                {% for employee in employees %}
+                    {% if employee.department in departments %}
+                        {% set _ = departments.update({employee.department: departments[employee.department] + 1}) %}
+                    {% else %}
+                        {% set _ = departments.update({employee.department: 1}) %}
+                    {% endif %}
+                {% endfor %}
+
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead>
+                            <tr>
+                                <th>Departamento</th>
+                                <th>Funcionários</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for dept, count in departments.items() %}
+                            <tr>
+                                <td>{{ dept }}</td>
+                                <td>{{ count }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Detalhes dos Usuários</h5>
+            </div>
+            <div class="card-body">
+                {% set user_roles = {'admin': 0, 'management': 0, 'employee': 0, 'no_access': 0} %}
+                {% for employee in employees %}
+                    {% if employee.user %}
+                        {% if employee.user.role == 'admin' %}
+                            {% set _ = user_roles.update({'admin': user_roles['admin'] + 1}) %}
+                        {% elif employee.user.role == 'management' %}
+                            {% set _ = user_roles.update({'management': user_roles['management'] + 1}) %}
+                        {% else %}
+                            {% set _ = user_roles.update({'employee': user_roles['employee'] + 1}) %}
+                        {% endif %}
+                    {% else %}
+                        {% set _ = user_roles.update({'no_access': user_roles['no_access'] + 1}) %}
+                    {% endif %}
+                {% endfor %}
+
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead>
+                            <tr>
+                                <th>Nível de Acesso</th>
+                                <th>Quantidade</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Administradores</td>
+                                <td>{{ user_roles['admin'] }}</td>
+                            </tr>
+                            <tr>
+                                <td>Gerência</td>
+                                <td>{{ user_roles['management'] }}</td>
+                            </tr>
+                            <tr>
+                                <td>Funcionários</td>
+                                <td>{{ user_roles['employee'] }}</td>
+                            </tr>
+                            <tr>
+                                <td>Sem Acesso</td>
+                                <td>{{ user_roles['no_access'] }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

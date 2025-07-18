@@ -1,0 +1,324 @@
+{% extends 'base.html' %}
+
+{% block title %}Relatório Financeiro{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Todo o conteúdo existente do relatório financeiro aqui -->
+    <h1 class="mt-4 mb-3">Relatório Financeiro</h1>
+
+    <!-- Filtros -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-filter me-2"></i>Filtros</h6>
+        </div>
+        <div class="card-body">
+            <form method="GET" action="{{ url_for('reports.finance') }}" class="row g-3">
+                <div class="col-md-5">
+                    <label for="start_date" class="form-label">Data Inicial</label>
+                    <input type="date" class="form-control" id="start_date" name="start_date" value="{{ start_date }}">
+                </div>
+                <div class="col-md-5">
+                    <label for="end_date" class="form-label">Data Final</label>
+                    <input type="date" class="form-control" id="end_date" name="end_date" value="{{ end_date }}">
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Resumo Financeiro -->
+    <div class="row">
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Total de Receitas</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">R$ {{ "%.2f"|format(total_income|float) }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-arrow-up fa-2x text-success"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card border-left-danger shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                                Total de Despesas</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">R$ {{ "%.2f"|format(total_expenses|float) }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-arrow-down fa-2x text-danger"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card border-left-{{ 'success' if balance >= 0 else 'danger' }} shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-{{ 'success' if balance >= 0 else 'danger' }} text-uppercase mb-1">
+                                Saldo</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">R$ {{ "%.2f"|format(balance|float) }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-balance-scale fa-2x text-{{ 'success' if balance >= 0 else 'danger' }}"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráficos -->
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Receitas vs Despesas</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-pie pt-4">
+                        <canvas id="incomeExpenseChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Principais Categorias</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-bar pt-4">
+                        <canvas id="topCategoriesChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lançamentos -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-list me-2"></i>Lançamentos Financeiros</h6>
+            <div>
+                <a href="{{ url_for('reports.export_finance', format='pdf', start_date=start_date, end_date=end_date) }}" class="btn btn-sm btn-danger me-2">
+                    <i class="fas fa-file-pdf me-1"></i> PDF
+                </a>
+                <a href="{{ url_for('reports.export_finance', format='excel', start_date=start_date, end_date=end_date) }}" class="btn btn-sm btn-success">
+                    <i class="fas fa-file-excel me-1"></i> Excel
+                </a>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Tipo</th>
+                            <th>Categoria</th>
+                            <th>Descrição</th>
+                            <th>Valor</th>
+                            <th>Cliente/Fornecedor</th>
+                            <th>Método</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in income + expenses %}
+                        <tr class="{{ 'table-success' if entry.type == 'income' else 'table-danger' }}">
+                            <td>{{ entry.date.strftime('%d/%m/%Y') }}</td>
+                            <td>{{ 'Receita' if entry.type == 'income' else 'Despesa' }}</td>
+                            <td>{{ entry.category }}</td>
+                            <td>{{ entry.description }}</td>
+                            <td>R$ {{ "%.2f"|format(entry.amount|float) }}</td>
+                            <td>
+                                {% if entry.client %}
+                                    {{ entry.client.name }}
+                                {% elif entry.supplier %}
+                                    {{ entry.supplier.name }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>{{ entry.payment_method }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Categorias -->
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-success">Receitas por Categoria</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Categoria</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for category in income_by_category %}
+                                <tr>
+                                    <td>{{ category.category }}</td>
+                                    <td>R$ {{ "%.2f"|format(category.total|float) }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-danger">Despesas por Categoria</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Categoria</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for category in expense_by_category %}
+                                <tr>
+                                    <td>{{ category.category }}</td>
+                                    <td>R$ {{ "%.2f"|format(category.total|float) }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Receitas vs Despesas Chart
+    const incomeExpenseChart = document.getElementById('incomeExpenseChart');
+    if (incomeExpenseChart) {
+        new Chart(incomeExpenseChart, {
+            type: 'pie',
+            data: {
+                labels: ['Receitas', 'Despesas'],
+                datasets: [{
+                    data: [{{ total_income }}, {{ total_expenses }}],
+                    backgroundColor: ['#1cc88a', '#e74a3b'],
+                    hoverBackgroundColor: ['#17a673', '#be2617'],
+                    hoverBorderColor: "rgba(234, 236, 244, 1)",
+                }],
+            },
+            options: {
+                maintainAspectRatio: false,
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(tooltipItem) {
+                                return `R$ ${parseFloat(tooltipItem.raw).toFixed(2)}`;
+                            }
+                        }
+                    },
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    }
+
+    // Top Categories Chart
+    const topCategoriesChart = document.getElementById('topCategoriesChart');
+    if (topCategoriesChart) {
+        const categories = [];
+        const values = [];
+        const colors = [];
+
+        {% for category in income_by_category %}
+            categories.push("{{ category.category }} (R)");
+            values.push({{ category.total }});
+            colors.push('#1cc88a');
+        {% endfor %}
+
+        {% for category in expense_by_category %}
+            categories.push("{{ category.category }} (D)");
+            values.push({{ category.total }});
+            colors.push('#e74a3b');
+        {% endfor %}
+
+        new Chart(topCategoriesChart, {
+            type: 'bar',
+            data: {
+                labels: categories,
+                datasets: [{
+                    label: 'Valor',
+                    data: values,
+                    backgroundColor: colors,
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return 'R$ ' + value.toFixed(2);
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `R$ ${parseFloat(context.parsed.y).toFixed(2)}`;
+                            }
+                        }
+                    },
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

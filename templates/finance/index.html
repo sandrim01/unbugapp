@@ -1,0 +1,235 @@
+{% extends 'base.html' %}
+
+{% block title %}Finanças | Unbug Solutions TI{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1 class="mb-3"><i class="fas fa-money-bill-wave me-2"></i>Finanças</h1>
+        <p class="text-muted">Gerencie todas as entradas e saídas financeiras da empresa.</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('finance.create_entry') }}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>Novo Lançamento
+        </a>
+    </div>
+</div>
+
+<!-- Financial Summary -->
+<div class="row mb-4">
+    <div class="col-md-4 mb-3">
+        <div class="card shadow h-100 bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title mb-2">Receitas Totais</h6>
+                        <h3 class="mb-0">R$ {{ "%.2f"|format(total_income|float) }}</h3>
+                    </div>
+                    <div>
+                        <i class="fas fa-arrow-up fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card shadow h-100 bg-danger text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title mb-2">Despesas Totais</h6>
+                        <h3 class="mb-0">R$ {{ "%.2f"|format(total_expenses|float) }}</h3>
+                    </div>
+                    <div>
+                        <i class="fas fa-arrow-down fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card shadow h-100 {% if balance >= 0 %}bg-primary{% else %}bg-danger{% endif %} text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title mb-2">Saldo</h6>
+                        <h3 class="mb-0">R$ {{ "%.2f"|format(balance|float) }}</h3>
+                    </div>
+                    <div>
+                        <i class="fas fa-wallet fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Financial Charts -->
+<div class="row mb-4">
+    <div class="col-md-6 mb-3">
+        <div class="card shadow h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Receitas vs Despesas</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="incomeExpenseChart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 mb-3">
+        <div class="card shadow h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Top Categorias</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="categoriesChart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Search Form -->
+<div class="card shadow mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-search me-2"></i>Filtrar Lançamentos</h5>
+    </div>
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('finance.index') }}">
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label for="query" class="form-label">Buscar por Descrição/Categoria</label>
+                    {{ search_form.query(class="form-control", value=request.args.get('query', '')) }}
+                </div>
+                <div class="col-md-2 mb-3">
+                    <label for="status" class="form-label">Tipo</label>
+                    <select name="status" id="status" class="form-select">
+                        <option value="">Todos</option>
+                        <option value="income" {% if request.args.get('status') == 'income' %}selected{% endif %}>Receita</option>
+                        <option value="expense" {% if request.args.get('status') == 'expense' %}selected{% endif %}>Despesa</option>
+                    </select>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="date_from" class="form-label">Data Inicial</label>
+                    {{ search_form.date_from(class="form-control", type="date", value=request.args.get('date_from', '')) }}
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="date_to" class="form-label">Data Final</label>
+                    {{ search_form.date_to(class="form-control", type="date", value=request.args.get('date_to', '')) }}
+                </div>
+            </div>
+            <div class="text-end">
+                <a href="{{ url_for('finance.index') }}" class="btn btn-secondary me-2">Limpar</a>
+                {{ search_form.submit(class="btn btn-primary") }}
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Financial Entries Table -->
+<div class="card shadow">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-list me-2"></i>Lançamentos Financeiros</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Descrição</th>
+                        <th>Categoria</th>
+                        <th>Tipo</th>
+                        <th>Valor</th>
+                        <th>Cliente/Fornecedor</th>
+                        <th>Referência</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if entries %}
+                        {% for entry in entries %}
+                        <tr>
+                            <td>{{ entry.date.strftime('%d/%m/%Y') }}</td>
+                            <td>{{ entry.description }}</td>
+                            <td>{{ entry.category }}</td>
+                            <td>
+                                {% if entry.type == 'income' %}
+                                    <span class="badge bg-success">Receita</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Despesa</span>
+                                {% endif %}
+                            </td>
+                            <td class="{% if entry.type == 'income' %}text-success{% else %}text-danger{% endif %}">
+                                {% if entry.type == 'income' %}+{% else %}-{% endif %}
+                                R$ {{ "%.2f"|format(entry.amount|float) }}
+                            </td>
+                            <td>
+                                {% if entry.client %}
+                                    <a href="{{ url_for('clients.view_client', client_id=entry.client.id) }}">
+                                        {{ entry.client.name }}
+                                    </a>
+                                {% elif entry.supplier %}
+                                    <a href="{{ url_for('clients.view_supplier', supplier_id=entry.supplier.id) }}">
+                                        {{ entry.supplier.name }}
+                                    </a>
+                                {% else %}
+                                    <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if entry.service_order %}
+                                    <a href="{{ url_for('orders.view_order', order_id=entry.service_order.id) }}">
+                                        OS #{{ entry.service_order.id }}
+                                    </a>
+                                {% elif entry.project %}
+                                    Projeto: {{ entry.project.name }}
+                                {% else %}
+                                    <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    {% if entry.file_path %}
+                                    <a href="{{ url_for('static', filename=entry.file_path) }}" target="_blank" class="btn btn-sm btn-info" title="Ver Anexo">
+                                        <i class="fas fa-file-alt"></i>
+                                    </a>
+                                    {% endif %}
+                                    <a href="{{ url_for('finance.edit_entry', entry_id=entry.id) }}" class="btn btn-sm btn-warning" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    {% if current_user.can_delete() %}
+                                    <form action="{{ url_for('finance.delete_entry', entry_id=entry.id) }}" method="post" class="d-inline" onsubmit="return confirm('Tem certeza que deseja excluir este lançamento?');">
+                                        <button type="submit" class="btn btn-sm btn-danger" title="Excluir">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="8" class="text-center">Nenhum lançamento financeiro encontrado.</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log("Inicializando gráficos da página de finanças");
+        if (typeof initFinanceCharts === 'function') {
+            initFinanceCharts();
+        } else {
+            console.error("Função initFinanceCharts não encontrada");
+        }
+    });
+</script>
+{% endblock %}

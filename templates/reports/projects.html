@@ -1,0 +1,290 @@
+
+{% extends 'base.html' %}
+
+{% block title %}Relatório de Projetos - Unbug Solutions TI{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="mt-4 mb-3">Relatório de Projetos</h1>
+    
+    <!-- Filtros -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-filter me-2"></i>Filtros</h6>
+        </div>
+        <div class="card-body">
+            <form method="GET" action="{{ url_for('reports.projects') }}" class="row g-3">
+                <div class="col-md-3">
+                    <label for="start_date" class="form-label">Data Inicial</label>
+                    <input type="date" class="form-control" id="start_date" name="start_date" value="{{ start_date }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="end_date" class="form-label">Data Final</label>
+                    <input type="date" class="form-control" id="end_date" name="end_date" value="{{ end_date }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="status" class="form-label">Status</label>
+                    <select class="form-select" id="status" name="status">
+                        <option value="" {% if not status %}selected{% endif %}>Todos</option>
+                        <option value="planning" {% if status == 'planning' %}selected{% endif %}>Planejamento</option>
+                        <option value="in_progress" {% if status == 'in_progress' %}selected{% endif %}>Em Progresso</option>
+                        <option value="on_hold" {% if status == 'on_hold' %}selected{% endif %}>Em Espera</option>
+                        <option value="completed" {% if status == 'completed' %}selected{% endif %}>Concluído</option>
+                        <option value="cancelled" {% if status == 'cancelled' %}selected{% endif %}>Cancelado</option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Resumo -->
+    <div class="row">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total de Projetos</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_projects }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-project-diagram fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Em Andamento</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ status_counts.planning + status_counts.in_progress }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-tasks fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Concluídos</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ status_counts.completed }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Orçamento Total</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">R$ {{ "%.2f"|format(total_budget|float) }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-money-bill-wave fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Gráficos -->
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Status dos Projetos</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-pie pt-4">
+                        <canvas id="projectStatusChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Top Clientes</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-bar pt-4">
+                        <canvas id="clientProjectsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Lista de Projetos -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-list me-2"></i>Projetos</h6>
+            <a href="{{ url_for('reports.export_projects', start_date=start_date, end_date=end_date, status=status) }}" class="btn btn-sm btn-success">
+                <i class="fas fa-file-excel me-1"></i> Exportar para Excel
+            </a>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nome</th>
+                            <th>Cliente</th>
+                            <th>Gerente</th>
+                            <th>Status</th>
+                            <th>Data de Início</th>
+                            <th>Data de Término</th>
+                            <th>Orçamento</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for project in projects %}
+                        <tr>
+                            <td>{{ project.id }}</td>
+                            <td>{{ project.name }}</td>
+                            <td>
+                                {% if project.client %}
+                                    {{ project.client.name }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if project.manager %}
+                                    {{ project.manager.full_name }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if project.status == 'planning' %}
+                                    <span class="badge bg-primary">Planejamento</span>
+                                {% elif project.status == 'in_progress' %}
+                                    <span class="badge bg-info">Em Progresso</span>
+                                {% elif project.status == 'on_hold' %}
+                                    <span class="badge bg-warning">Em Espera</span>
+                                {% elif project.status == 'completed' %}
+                                    <span class="badge bg-success">Concluído</span>
+                                {% elif project.status == 'cancelled' %}
+                                    <span class="badge bg-danger">Cancelado</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ project.start_date.strftime('%d/%m/%Y') if project.start_date else '-' }}</td>
+                            <td>{{ project.end_date.strftime('%d/%m/%Y') if project.end_date else '-' }}</td>
+                            <td>R$ {{ "%.2f"|format(project.budget|float) if project.budget else '-' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Project Status Chart
+    const projectStatusChart = document.getElementById('projectStatusChart');
+    if (projectStatusChart) {
+        new Chart(projectStatusChart, {
+            type: 'pie',
+            data: {
+                labels: ['Planejamento', 'Em Progresso', 'Em Espera', 'Concluídos', 'Cancelados'],
+                datasets: [{
+                    data: [
+                        {{ status_counts.planning }}, 
+                        {{ status_counts.in_progress }}, 
+                        {{ status_counts.on_hold }},
+                        {{ status_counts.completed }}, 
+                        {{ status_counts.cancelled }}
+                    ],
+                    backgroundColor: ['#4e73df', '#36b9cc', '#f6c23e', '#1cc88a', '#e74a3b'],
+                    hoverBackgroundColor: ['#2e59d9', '#2c9faf', '#dda20a', '#17a673', '#be2617'],
+                    hoverBorderColor: "rgba(234, 236, 244, 1)",
+                }],
+            },
+            options: {
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    }
+    
+    // Client Projects Chart
+    const clientProjectsChart = document.getElementById('clientProjectsChart');
+    if (clientProjectsChart) {
+        const clients = [];
+        const counts = [];
+        
+        {% for client in client_projects %}
+            clients.push("{{ client.name }}");
+            counts.push({{ client.count }});
+        {% endfor %}
+        
+        new Chart(clientProjectsChart, {
+            type: 'bar',
+            data: {
+                labels: clients,
+                datasets: [{
+                    label: 'Projetos',
+                    data: counts,
+                    backgroundColor: '#4e73df',
+                    borderColor: '#4e73df',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

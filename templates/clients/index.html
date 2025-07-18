@@ -1,0 +1,237 @@
+{% extends 'base.html' %}
+
+{% block title %}Clientes | Unbug Solutions TI{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1 class="mb-3"><i class="fas fa-users me-2"></i>Clientes</h1>
+        <p class="text-muted">Gerencie todos os clientes da empresa.</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('clients.create_client') }}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>Novo Cliente
+        </a>
+    </div>
+</div>
+
+<!-- Search Form -->
+<div class="card shadow mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-search me-2"></i>Buscar Clientes</h5>
+    </div>
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('clients.index') }}">
+            <div class="row">
+                <div class="col-md-8 mb-3">
+                    <label for="query" class="form-label">Buscar por Nome/Email/Contato</label>
+                    {{ search_form.query(class="form-control", value=request.args.get('query', '')) }}
+                </div>
+                <div class="col-md-4 mb-3 d-flex align-items-end">
+                    {{ search_form.submit(class="btn btn-primary w-100") }}
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Clients Table -->
+<div class="card shadow">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-list me-2"></i>Lista de Clientes</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Email</th>
+                        <th>Telefone</th>
+                        <th>Cidade/Estado</th>
+                        <th>Contato</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if clients %}
+                        {% for client in clients %}
+                        <tr>
+                            <td>
+                                <a href="{{ url_for('clients.view_client', client_id=client.id) }}">
+                                    {{ client.name }}
+                                </a>
+                            </td>
+                            <td>
+                                <a href="mailto:{{ client.email }}">{{ client.email }}</a>
+                            </td>
+                            <td>{{ client.phone }}</td>
+                            <td>{{ client.city }}/{{ client.state }}</td>
+                            <td>{{ client.contact_person or "N/A" }}</td>
+                            <td>
+                                {% if client.active %}
+                                    <span class="badge bg-success">Ativo</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Inativo</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{{ url_for('clients.view_client', client_id=client.id) }}" class="btn btn-sm btn-info" title="Visualizar">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{{ url_for('clients.edit_client', client_id=client.id) }}" class="btn btn-sm btn-warning" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    {% if current_user.can_delete() %}
+                                    <form action="{{ url_for('clients.delete_client', client_id=client.id) }}" method="post" class="d-inline" onsubmit="return confirm('Tem certeza que deseja excluir este cliente?');">
+                                        <button type="submit" class="btn btn-sm btn-danger" title="Excluir">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center">Nenhum cliente encontrado.</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Section -->
+<div class="row mt-4">
+    <!-- Client Statistics -->
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Estatísticas de Clientes</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-4">
+                        <div class="h3 mb-0">{{ clients|length }}</div>
+                        <p>Clientes Totais</p>
+                    </div>
+                    <div class="col-4">
+                        {% set active_clients = namespace(count=0) %}
+                        {% for client in clients %}
+                            {% if client.active %}
+                                {% set active_clients.count = active_clients.count + 1 %}
+                            {% endif %}
+                        {% endfor %}
+                        <div class="h3 mb-0 text-success">{{ active_clients.count }}</div>
+                        <p>Clientes Ativos</p>
+                    </div>
+                    <div class="col-4">
+                        <div class="h3 mb-0 text-danger">{{ clients|length - active_clients.count }}</div>
+                        <p>Clientes Inativos</p>
+                    </div>
+                </div>
+                
+                <!-- Geographic Distribution -->
+                <div class="mt-4">
+                    <h6>Distribuição Geográfica</h6>
+                    {% set states = {} %}
+                    {% for client in clients %}
+                        {% if client.state in states %}
+                            {% set _ = states.update({client.state: states[client.state] + 1}) %}
+                        {% else %}
+                            {% set _ = states.update({client.state: 1}) %}
+                        {% endif %}
+                    {% endfor %}
+                    
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Estado</th>
+                                    <th>Qtd. Clientes</th>
+                                    <th>Percentual</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for state, count in states.items() %}
+                                <tr>
+                                    <td>{{ state }}</td>
+                                    <td>{{ count }}</td>
+                                    <td>
+                                        <div class="progress" style="height: 10px;">
+                                            <div class="progress-bar" role="progressbar" style="width: {{ (count / clients|length) * 100 }}%"></div>
+                                        </div>
+                                        {{ ((count / clients|length) * 100)|round(1) }}%
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-bolt me-2"></i>Ações Rápidas</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <i class="fas fa-clipboard-list fa-3x mb-3 text-primary"></i>
+                                <h5>Nova Ordem de Serviço</h5>
+                                <p class="text-muted">Crie uma ordem para um cliente</p>
+                                <a href="{{ url_for('orders.create_order') }}" class="btn btn-primary">Criar OS</a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <i class="fas fa-project-diagram fa-3x mb-3 text-info"></i>
+                                <h5>Novo Projeto</h5>
+                                <p class="text-muted">Inicie um novo projeto</p>
+                                <a href="{{ url_for('orders.create_project') }}" class="btn btn-info text-white">Criar Projeto</a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <i class="fas fa-search fa-3x mb-3 text-warning"></i>
+                                <h5>Buscar OS</h5>
+                                <p class="text-muted">Pesquise ordens por cliente</p>
+                                <a href="{{ url_for('orders.index') }}" class="btn btn-warning">Buscar</a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <i class="fas fa-file-export fa-3x mb-3 text-success"></i>
+                                <h5>Relatórios</h5>
+                                <p class="text-muted">Gere relatórios por cliente</p>
+                                <button class="btn btn-success" disabled>Em Breve</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

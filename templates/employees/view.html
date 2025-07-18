@@ -1,0 +1,410 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ employee.full_name }} | Unbug Solutions TI{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1 class="mb-3"><i class="fas fa-id-card me-2"></i>{{ employee.full_name }}</h1>
+        <p class="text-muted">{{ employee.position }} - {{ employee.department }}</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('employees.index') }}" class="btn btn-secondary me-2">
+            <i class="fas fa-arrow-left"></i> Voltar
+        </a>
+        {% if current_user.is_management() %}
+        <a href="{{ url_for('employees.edit', employee_id=employee.id) }}" class="btn btn-warning">
+            <i class="fas fa-edit"></i> Editar
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row">
+    <!-- Informações Pessoais -->
+    <div class="col-md-4 mb-4">
+        <div class="card shadow h-100">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-user me-2"></i>Informações Pessoais</h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <div class="avatar-circle">
+                        <span class="initials">{{ employee.first_name[0] }}{{ employee.last_name[0] }}</span>
+                    </div>
+                    <h4 class="mt-3">{{ employee.full_name }}</h4>
+                    <p class="text-muted">{{ employee.position }}</p>
+                    <p class="text-muted">{{ employee.department }}</p>
+
+                    <span class="badge {% if employee.active %}bg-success{% else %}bg-danger{% endif %} mb-3">
+                        {% if employee.active %}Ativo{% else %}Inativo{% endif %}
+                    </span>
+                </div>
+
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item">
+                        <i class="fas fa-phone me-2"></i> {{ employee.phone }}
+                    </li>
+                    {% if employee.user %}
+                    <li class="list-group-item">
+                        <i class="fas fa-envelope me-2"></i> {{ employee.user.email }}
+                    </li>
+                    {% endif %}
+                    <li class="list-group-item">
+                        <i class="fas fa-calendar-alt me-2"></i> Contratado em: {{ employee.hire_date.strftime('%d/%m/%Y') }}
+                    </li>
+                    <li class="list-group-item">
+                        <i class="fas fa-clock me-2"></i> Tempo de empresa: 
+                        {% set days_employed = (now.date() - employee.hire_date).days %}
+                        {% if days_employed < 30 %}
+                            {{ days_employed }} dias
+                        {% elif days_employed < 365 %}
+                            {{ (days_employed / 30) | int }} meses
+                        {% else %}
+                            {{ (days_employed / 365) | int }} anos
+                        {% endif %}
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Acesso ao Sistema -->
+    <div class="col-md-4 mb-4">
+        <div class="card shadow h-100">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="fas fa-user-shield me-2"></i>Acesso ao Sistema</h5>
+            </div>
+            <div class="card-body">
+                {% if employee.user %}
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">
+                            <strong>Nome de Usuário:</strong> {{ employee.user.username }}
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Nível de Acesso:</strong> 
+                            {% if employee.user.role == 'admin' %}
+                                <span class="badge bg-danger">Administrador</span>
+                            {% elif employee.user.role == 'management' %}
+                                <span class="badge bg-warning text-dark">Gerência</span>
+                            {% else %}
+                                <span class="badge bg-primary">Funcionário</span>
+                            {% endif %}
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Data de Cadastro:</strong> {{ employee.user.created_at.strftime('%d/%m/%Y') }}
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Última Atualização:</strong> {{ employee.user.updated_at.strftime('%d/%m/%Y') }}
+                        </li>
+                    </ul>
+
+                    <div class="mt-3">
+                        <h6>Permissões:</h6>
+                        <ul>
+                            {% if employee.user.is_admin() %}
+                                <li>Acesso total ao sistema</li>
+                                <li>Gerenciamento de usuários</li>
+                                <li>Acesso à segurança</li>
+                                <li>Pode excluir registros</li>
+                            {% elif employee.user.is_management() %}
+                                <li>Acesso a finanças</li>
+                                <li>Gerenciamento de usuários</li>
+                                <li>Pode excluir registros</li>
+                                <li><span class="text-danger">Não pode acessar segurança</span></li>
+                            {% else %}
+                                <li>Pode criar e editar registros</li>
+                                <li><span class="text-danger">Não pode acessar finanças</span></li>
+                                <li><span class="text-danger">Não pode acessar segurança</span></li>
+                                <li><span class="text-danger">Não pode excluir registros</span></li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                {% else %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Este funcionário não possui credenciais de acesso ao sistema.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Activity Statistics -->
+    <div class="col-md-4 mb-4">
+        <div class="card shadow h-100">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Estatísticas de Atividade</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-4">
+                    <h6>Ordens de Serviço</h6>
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="h2 mb-0">{{ service_orders|length }}</div>
+                            <small class="text-muted">Total de Ordens</small>
+                        </div>
+                        <div class="col-6">
+                            {% set active_orders = namespace(count=0) %}
+                            {% for order in service_orders %}
+                                {% if order.status in ['open', 'in_progress'] %}
+                                    {% set active_orders.count = active_orders.count + 1 %}
+                                {% endif %}
+                            {% endfor %}
+                            <div class="h2 mb-0">{{ active_orders.count }}</div>
+                            <small class="text-muted">Ordens Ativas</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <h6>Projetos</h6>
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="h2 mb-0">{{ projects|length }}</div>
+                            <small class="text-muted">Total de Projetos</small>
+                        </div>
+                        <div class="col-6">
+                            {% set active_projects = namespace(count=0) %}
+                            {% for project in projects %}
+                                {% if project.status in ['planning', 'in_progress'] %}
+                                    {% set active_projects.count = active_projects.count + 1 %}
+                                {% endif %}
+                            {% endfor %}
+                            <div class="h2 mb-0">{{ active_projects.count }}</div>
+                            <small class="text-muted">Projetos Ativos</small>
+                        </div>
+                    </div>
+                </div>
+                
+                {% if service_orders %}
+                <div>
+                    <h6>Status das Ordens de Serviço</h6>
+                    {% set order_stats = {
+                        'open': 0,
+                        'in_progress': 0,
+                        'completed': 0,
+                        'cancelled': 0
+                    } %}
+                    
+                    {% for order in service_orders %}
+                        {% if order.status == 'open' %}
+                            {% set _ = order_stats.update({'open': order_stats['open'] + 1}) %}
+                        {% elif order.status == 'in_progress' %}
+                            {% set _ = order_stats.update({'in_progress': order_stats['in_progress'] + 1}) %}
+                        {% elif order.status == 'completed' %}
+                            {% set _ = order_stats.update({'completed': order_stats['completed'] + 1}) %}
+                        {% elif order.status == 'cancelled' %}
+                            {% set _ = order_stats.update({'cancelled': order_stats['cancelled'] + 1}) %}
+                        {% endif %}
+                    {% endfor %}
+                    
+                    <div class="progress mb-2" style="height: 30px;">
+                        {% if order_stats['open'] > 0 %}
+                        <div class="progress-bar bg-info" style="width: {{ (order_stats['open'] / service_orders|length) * 100 }}%" 
+                             data-bs-toggle="tooltip" title="Abertas: {{ order_stats['open'] }}">
+                            {{ order_stats['open'] }}
+                        </div>
+                        {% endif %}
+                        {% if order_stats['in_progress'] > 0 %}
+                        <div class="progress-bar bg-primary" style="width: {{ (order_stats['in_progress'] / service_orders|length) * 100 }}%" 
+                             data-bs-toggle="tooltip" title="Em Andamento: {{ order_stats['in_progress'] }}">
+                            {{ order_stats['in_progress'] }}
+                        </div>
+                        {% endif %}
+                        {% if order_stats['completed'] > 0 %}
+                        <div class="progress-bar bg-success" style="width: {{ (order_stats['completed'] / service_orders|length) * 100 }}%" 
+                             data-bs-toggle="tooltip" title="Concluídas: {{ order_stats['completed'] }}">
+                            {{ order_stats['completed'] }}
+                        </div>
+                        {% endif %}
+                        {% if order_stats['cancelled'] > 0 %}
+                        <div class="progress-bar bg-danger" style="width: {{ (order_stats['cancelled'] / service_orders|length) * 100 }}%" 
+                             data-bs-toggle="tooltip" title="Canceladas: {{ order_stats['cancelled'] }}">
+                            {{ order_stats['cancelled'] }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="row text-center small">
+                        <div class="col-3 text-info">Abertas</div>
+                        <div class="col-3 text-primary">Em Andamento</div>
+                        <div class="col-3 text-success">Concluídas</div>
+                        <div class="col-3 text-danger">Canceladas</div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Service Orders -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="card shadow mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-clipboard-list me-2"></i>Ordens de Serviço Recentes</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    {% if service_orders %}
+                        <table class="table table-sm table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Título</th>
+                                    <th>Cliente</th>
+                                    <th>Status</th>
+                                    <th>Data</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for order in service_orders[:5] %}
+                                <tr>
+                                    <td>#{{ order.id }}</td>
+                                    <td>
+                                        <a href="{{ url_for('orders.view_order', order_id=order.id) }}">
+                                            {{ order.title }}
+                                        </a>
+                                    </td>
+                                    <td>{{ order.client.name }}</td>
+                                    <td>
+                                        {% if order.status == 'open' %}
+                                            <span class="badge badge-open">Aberta</span>
+                                        {% elif order.status == 'in_progress' %}
+                                            <span class="badge badge-in-progress">Em Andamento</span>
+                                        {% elif order.status == 'completed' %}
+                                            <span class="badge badge-completed">Concluída</span>
+                                        {% elif order.status == 'cancelled' %}
+                                            <span class="badge badge-cancelled">Cancelada</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ order.start_date.strftime('%d/%m/%Y') }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        {% if service_orders|length > 5 %}
+                            <div class="text-center mt-2">
+                                <button class="btn btn-sm btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#allServiceOrders">
+                                    Ver todas ({{ service_orders|length }})
+                                </button>
+                            </div>
+                            <div class="collapse mt-3" id="allServiceOrders">
+                                <table class="table table-sm table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Título</th>
+                                            <th>Cliente</th>
+                                            <th>Status</th>
+                                            <th>Data</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for order in service_orders[5:] %}
+                                        <tr>
+                                            <td>#{{ order.id }}</td>
+                                            <td>
+                                                <a href="{{ url_for('orders.view_order', order_id=order.id) }}">
+                                                    {{ order.title }}
+                                                </a>
+                                            </td>
+                                            <td>{{ order.client.name }}</td>
+                                            <td>
+                                                {% if order.status == 'open' %}
+                                                    <span class="badge badge-open">Aberta</span>
+                                                {% elif order.status == 'in_progress' %}
+                                                    <span class="badge badge-in-progress">Em Andamento</span>
+                                                {% elif order.status == 'completed' %}
+                                                    <span class="badge badge-completed">Concluída</span>
+                                                {% elif order.status == 'cancelled' %}
+                                                    <span class="badge badge-cancelled">Cancelada</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ order.start_date.strftime('%d/%m/%Y') }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="alert alert-info">
+                            Este funcionário não possui ordens de serviço registradas.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Project List -->
+    <div class="col-md-6">
+        <div class="card shadow mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-project-diagram me-2"></i>Projetos</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    {% if projects %}
+                        <table class="table table-sm table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Nome</th>
+                                    <th>Cliente</th>
+                                    <th>Status</th>
+                                    <th>Data Início</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for project in projects %}
+                                <tr>
+                                    <td>{{ project.name }}</td>
+                                    <td>{{ project.client.name }}</td>
+                                    <td>
+                                        {% if project.status == 'planning' %}
+                                            <span class="badge badge-open">Planejamento</span>
+                                        {% elif project.status == 'in_progress' %}
+                                            <span class="badge badge-in-progress">Em Andamento</span>
+                                        {% elif project.status == 'on_hold' %}
+                                            <span class="badge badge-medium">Em Espera</span>
+                                        {% elif project.status == 'completed' %}
+                                            <span class="badge badge-completed">Concluído</span>
+                                        {% elif project.status == 'cancelled' %}
+                                            <span class="badge badge-cancelled">Cancelado</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ project.start_date.strftime('%d/%m/%Y') if project.start_date else 'Não definida' }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <div class="alert alert-info">
+                            Este funcionário não está gerenciando nenhum projeto.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.avatar-circle {
+    width: 100px;
+    height: 100px;
+    background-color: var(--primary-color);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.initials {
+    font-size: 42px;
+    color: white;
+    font-weight: bold;
+}
+</style>
+{% endblock %}

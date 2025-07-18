@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
+  <!-- Bug body -->
+  <path d="M250 100 L150 150 L150 350 L250 400 L350 350 L350 150 Z" fill="#0a6ebd" stroke="#000" stroke-width="8"/>
+  
+  <!-- Left side of bug -->
+  <path d="M150 150 L250 200 L250 400 L150 350 Z" fill="#074c86" stroke="#000" stroke-width="2"/>
+  
+  <!-- Circuit patterns on right side -->
+  <path d="M270 210 L310 210 L310 230 L330 230 L330 260 L310 260 L310 280 L290 280 L290 300 L330 300 L330 320 L290 320 L290 350 L330 350" fill="none" stroke="#fff" stroke-width="6"/>
+  
+  <!-- Bug head -->
+  <path d="M200 100 L250 70 L300 100 L300 150 L200 150 Z" fill="#0a6ebd" stroke="#000" stroke-width="8"/>
+  <path d="M250 70 L300 100 L300 150 L250 150 Z" fill="#074c86" stroke="none"/>
+  
+  <!-- Bug eyes -->
+  <circle cx="220" cy="110" r="10" fill="#fff" stroke="#000" stroke-width="2"/>
+  <circle cx="280" cy="110" r="10" fill="#fff" stroke="#000" stroke-width="2"/>
+  
+  <!-- Bug antennas -->
+  <path d="M210 70 L180 30" fill="none" stroke="#000" stroke-width="8"/>
+  <path d="M290 70 L320 30" fill="none" stroke="#000" stroke-width="8"/>
+  
+  <!-- Bug legs -->
+  <path d="M150 180 L100 150" fill="none" stroke="#000" stroke-width="8"/>
+  <path d="M150 250 L100 250" fill="none" stroke="#000" stroke-width="8"/>
+  <path d="M150 320 L100 350" fill="none" stroke="#000" stroke-width="8"/>
+  <path d="M350 180 L400 150" fill="none" stroke="#000" stroke-width="8"/>
+  <path d="M350 250 L400 250" fill="none" stroke="#000" stroke-width="8"/>
+  <path d="M350 320 L400 350" fill="none" stroke="#000" stroke-width="8"/>
+  
+  <!-- Wifi signal -->
+  <path d="M400 120 C410 110, 420 100, 430 100" fill="none" stroke="#95c93d" stroke-width="8" stroke-linecap="round"/>
+  <path d="M400 105 C415 90, 430 85, 440 85" fill="none" stroke="#95c93d" stroke-width="8" stroke-linecap="round"/>
+  <path d="M400 90 C420 75, 440 70, 450 70" fill="none" stroke="#95c93d" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="455" cy="60" r="8" fill="#000"/>
+</svg>

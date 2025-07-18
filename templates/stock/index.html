@@ -1,0 +1,218 @@
+
+{% extends 'base.html' %}
+
+{% block title %}Almoxarifado | Unbug Solutions TI{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1 class="mb-3"><i class="fas fa-boxes me-2"></i>Almoxarifado</h1>
+        <p class="text-muted">Gerencie o estoque e controle de materiais da empresa.</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('stock.create_item') }}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>Novo Item
+        </a>
+    </div>
+</div>
+
+<!-- Low Stock Alert Box -->
+{% if low_stock_items %}
+<div class="alert alert-warning mb-4">
+    <h5><i class="fas fa-exclamation-triangle me-2"></i>Alerta de Estoque Baixo</h5>
+    <p>Há {{ low_stock_items|length }} item(s) com estoque baixo que precisam de atenção.</p>
+    <div class="text-end">
+        <button class="btn btn-sm btn-warning" type="button" data-bs-toggle="collapse" data-bs-target="#lowStockItems">
+            Ver Itens
+        </button>
+    </div>
+    <div class="collapse mt-3" id="lowStockItems">
+        <div class="table-responsive">
+            <table class="table table-sm table-hover">
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>SKU</th>
+                        <th>Categoria</th>
+                        <th>Estoque Atual</th>
+                        <th>Estoque Mínimo</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in low_stock_items %}
+                    <tr>
+                        <td>{{ item.name }}</td>
+                        <td>{{ item.sku }}</td>
+                        <td>{{ item.category }}</td>
+                        <td class="low-stock">{{ item.quantity }}</td>
+                        <td>{{ item.minimum_stock }}</td>
+                        <td>
+                            <a href="{{ url_for('stock.edit_item', item_id=item.id) }}" class="btn btn-sm btn-warning">
+                                <i class="fas fa-edit"></i> Atualizar
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Charts Section -->
+<div class="row mb-4">
+    <div class="col-md-6 mb-3">
+        <div class="card shadow h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Status do Inventário</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="inventoryStatusChart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 mb-3">
+        <div class="card shadow h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Top Itens</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="topItemsChart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Search Form -->
+<div class="card shadow mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-search me-2"></i>Filtrar Itens</h5>
+    </div>
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('stock.index') }}">
+            <div class="row">
+                <div class="col-md-8 mb-3">
+                    <label for="query" class="form-label">Buscar por Nome/SKU/Categoria</label>
+                    {{ search_form.query(class="form-control", value=request.args.get('query', '')) }}
+                </div>
+                <div class="col-md-4 mb-3 d-flex align-items-end">
+                    {{ search_form.submit(class="btn btn-primary w-100") }}
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Inventory Table -->
+<div class="card shadow">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-list me-2"></i>Lista de Itens</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>SKU</th>
+                        <th>Categoria</th>
+                        <th>Quantidade</th>
+                        <th>Preço Unitário</th>
+                        <th>Localização</th>
+                        <th>Fornecedor</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if items %}
+                        {% for item in items %}
+                        <tr>
+                            <td>{{ item.name }}</td>
+                            <td>{{ item.sku }}</td>
+                            <td>{{ item.category }}</td>
+                            <td {% if item.is_low_stock() %}class="low-stock"{% endif %}>
+                                {{ item.quantity }}
+                                {% if item.is_low_stock() %}
+                                    <i class="fas fa-exclamation-circle ms-1" title="Estoque Baixo"></i>
+                                {% endif %}
+                            </td>
+                            <td>R$ {{ "%.2f"|format(item.unit_price|float) }}</td>
+                            <td>{{ item.location or "N/A" }}</td>
+                            <td>
+                                {% if item.supplier %}
+                                    <a href="{{ url_for('clients.view_supplier', supplier_id=item.supplier.id) }}">
+                                        {{ item.supplier.name }}
+                                    </a>
+                                {% else %}
+                                    <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#updateQuantityModal{{ item.id }}">
+                                        <i class="fas fa-sync-alt"></i>
+                                    </button>
+                                    <a href="{{ url_for('stock.edit_item', item_id=item.id) }}" class="btn btn-sm btn-warning" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    {% if current_user.can_delete() %}
+                                    <form action="{{ url_for('stock.delete_item', item_id=item.id) }}" method="post" class="d-inline" onsubmit="return confirm('Tem certeza que deseja excluir este item?');">
+                                        <button type="submit" class="btn btn-sm btn-danger" title="Excluir">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Update Quantity Modal -->
+                                <div class="modal fade" id="updateQuantityModal{{ item.id }}" tabindex="-1" aria-labelledby="updateQuantityModalLabel{{ item.id }}" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="updateQuantityModalLabel{{ item.id }}">Atualizar Quantidade</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <form action="{{ url_for('stock.update_quantity', item_id=item.id) }}" method="post">
+                                                <div class="modal-body">
+                                                    <p>Item: <strong>{{ item.name }}</strong> ({{ item.sku }})</p>
+                                                    <p>Quantidade Atual: <strong>{{ item.quantity }}</strong></p>
+                                                    <p>Estoque Mínimo: <strong>{{ item.minimum_stock }}</strong></p>
+
+                                                    <div class="mb-3">
+                                                        <label for="quantity{{ item.id }}" class="form-label">Nova Quantidade:</label>
+                                                        <input type="number" class="form-control" id="quantity{{ item.id }}" name="quantity" min="0" value="{{ item.quantity }}">
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                    <button type="submit" class="btn btn-primary">Salvar</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="8" class="text-center">Nenhum item encontrado.</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        initDashboardCharts();
+    });
+</script>
+{% endblock %}

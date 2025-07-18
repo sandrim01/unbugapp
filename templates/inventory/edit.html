@@ -1,0 +1,159 @@
+{% extends 'base.html' %}
+
+{% block title %}Editar Item de Inventário | Unbug Solutions TI{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1 class="mb-3"><i class="fas fa-edit me-2"></i>Editar Item de Inventário</h1>
+        <p class="text-muted">Atualize as informações do item {{ item.name }}.</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('inventory.index') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Voltar
+        </a>
+    </div>
+</div>
+
+<div class="card shadow">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-box me-2"></i>Detalhes do Item</h5>
+    </div>
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('inventory.edit_item', item_id=item.id) }}">
+            {{ form.hidden_tag() }}
+            
+            <div class="row">
+                <!-- Left Column -->
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">{{ form.name.label }}</label>
+                        {{ form.name(class="form-control") }}
+                        {% if form.name.errors %}
+                            <div class="text-danger mt-1">
+                                {% for error in form.name.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="sku" class="form-label">{{ form.sku.label }}</label>
+                        {{ form.sku(class="form-control") }}
+                        {% if form.sku.errors %}
+                            <div class="text-danger mt-1">
+                                {% for error in form.sku.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">Código único de identificação do produto</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="category" class="form-label">{{ form.category.label }}</label>
+                        {{ form.category(class="form-control") }}
+                        {% if form.category.errors %}
+                            <div class="text-danger mt-1">
+                                {% for error in form.category.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="supplier_id" class="form-label">{{ form.supplier_id.label }}</label>
+                        {{ form.supplier_id(class="form-select") }}
+                        {% if form.supplier_id.errors %}
+                            <div class="text-danger mt-1">
+                                {% for error in form.supplier_id.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Right Column -->
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="description" class="form-label">{{ form.description.label }}</label>
+                        {{ form.description(class="form-control", rows=3) }}
+                        {% if form.description.errors %}
+                            <div class="text-danger mt-1">
+                                {% for error in form.description.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="quantity" class="form-label">{{ form.quantity.label }}</label>
+                            {{ form.quantity(class="form-control", min=0) }}
+                            {% if form.quantity.errors %}
+                                <div class="text-danger mt-1">
+                                    {% for error in form.quantity.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="minimum_stock" class="form-label">{{ form.minimum_stock.label }}</label>
+                            {{ form.minimum_stock(class="form-control", min=0) }}
+                            {% if form.minimum_stock.errors %}
+                                <div class="text-danger mt-1">
+                                    {% for error in form.minimum_stock.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">Gera alerta quando estoque fica abaixo</div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="unit_price" class="form-label">{{ form.unit_price.label }}</label>
+                            <div class="input-group">
+                                <span class="input-group-text">R$</span>
+                                {{ form.unit_price(class="form-control") }}
+                            </div>
+                            {% if form.unit_price.errors %}
+                                <div class="text-danger mt-1">
+                                    {% for error in form.unit_price.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="location" class="form-label">{{ form.location.label }}</label>
+                            {{ form.location(class="form-control") }}
+                            {% if form.location.errors %}
+                                <div class="text-danger mt-1">
+                                    {% for error in form.location.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">Prateleira, gaveta, etc.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="d-flex justify-content-end mt-3">
+                <a href="{{ url_for('inventory.index') }}" class="btn btn-secondary me-2">Cancelar</a>
+                {{ form.submit(class="btn btn-primary") }}
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

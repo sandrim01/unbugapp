@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+
+{% block title %}Ordens de Serviço | Unbug Solutions TI{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1 class="mb-3"><i class="fas fa-clipboard-list me-2"></i>Ordens de Serviço</h1>
+        <p class="text-muted">Gerencie todas as ordens de serviço da empresa.</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('orders.create_order') }}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>Nova Ordem
+        </a>
+    </div>
+</div>
+
+<!-- Search Form -->
+<div class="card shadow mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-search me-2"></i>Filtrar Ordens</h5>
+    </div>
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('orders.index') }}">
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label for="query" class="form-label">Buscar por Título/Descrição</label>
+                    {{ search_form.query(class="form-control", value=request.args.get('query', '')) }}
+                </div>
+                <div class="col-md-2 mb-3">
+                    <label for="status" class="form-label">Status</label>
+                    {{ search_form.status(class="form-select", selected=request.args.get('status', '')) }}
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="date_from" class="form-label">Data Inicial</label>
+                    {{ search_form.date_from(class="form-control", type="date", value=request.args.get('date_from', '')) }}
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="date_to" class="form-label">Data Final</label>
+                    {{ search_form.date_to(class="form-control", type="date", value=request.args.get('date_to', '')) }}
+                </div>
+            </div>
+            <div class="text-end">
+                <a href="{{ url_for('orders.index') }}" class="btn btn-secondary me-2">Limpar</a>
+                {{ search_form.submit(class="btn btn-primary") }}
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Orders Table -->
+<div class="card shadow">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-list me-2"></i>Lista de Ordens</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Título</th>
+                        <th>Cliente</th>
+                        <th>Responsável</th>
+                        <th>Data Início</th>
+                        <th>Status</th>
+                        <th>Prioridade</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if service_orders %}
+                        {% for order in service_orders %}
+                        <tr>
+                            <td>#{{ order.id }}</td>
+                            <td>
+                                <a href="{{ url_for('orders.view_order', order_id=order.id) }}">
+                                    {{ order.title }}
+                                </a>
+                            </td>
+                            <td>{{ order.client.name }}</td>
+                            <td>{{ order.employee.full_name }}</td>
+                            <td>{{ order.start_date.strftime('%d/%m/%Y') }}</td>
+                            <td>
+                                {% if order.status == 'open' %}
+                                    <span class="badge badge-open">Aberta</span>
+                                {% elif order.status == 'in_progress' %}
+                                    <span class="badge badge-in-progress">Em Andamento</span>
+                                {% elif order.status == 'completed' %}
+                                    <span class="badge badge-completed">Concluída</span>
+                                {% elif order.status == 'cancelled' %}
+                                    <span class="badge badge-cancelled">Cancelada</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if order.priority == 'low' %}
+                                    <span class="badge badge-low">Baixa</span>
+                                {% elif order.priority == 'medium' %}
+                                    <span class="badge badge-medium">Média</span>
+                                {% elif order.priority == 'high' %}
+                                    <span class="badge badge-high">Alta</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{{ url_for('orders.view_order', order_id=order.id) }}" class="btn btn-sm btn-info" title="Visualizar">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{{ url_for('orders.edit_order', order_id=order.id) }}" class="btn btn-sm btn-warning" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    {% if current_user.can_delete() %}
+                                    <form action="{{ url_for('orders.delete_order', order_id=order.id) }}" method="post" class="d-inline" onsubmit="return confirm('Tem certeza que deseja excluir esta ordem de serviço?');">
+                                        <button type="submit" class="btn btn-sm btn-danger" title="Excluir">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="8" class="text-center">Nenhuma ordem de serviço encontrada.</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

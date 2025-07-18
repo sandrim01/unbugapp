@@ -1,0 +1,195 @@
+{% extends 'base.html' %}
+
+{% block title %}Novo Lançamento | Unbug Solutions TI{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1 class="mb-3"><i class="fas fa-plus-circle me-2"></i>Novo Lançamento Financeiro</h1>
+        <p class="text-muted">Registre uma nova entrada ou saída no sistema financeiro.</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('finance.index') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Voltar
+        </a>
+    </div>
+</div>
+
+<div class="card shadow">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-money-bill-wave me-2"></i>Detalhes do Lançamento</h5>
+    </div>
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('finance.create_entry') }}" enctype="multipart/form-data">
+            {{ form.hidden_tag() }}
+            
+            <div class="row">
+                <!-- Left Column -->
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="type" class="form-label">{{ form.type.label }}</label>
+                        {{ form.type(class="form-select") }}
+                        {% if form.type.errors %}
+                            <div class="text-danger mt-1">
+                                {% for error in form.type.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="category" class="form-label">{{ form.category.label }}</label>
+                        {{ form.category(class="form-control") }}
+                        {% if form.category.errors %}
+                            <div class="text-danger mt-1">
+                                {% for error in form.category.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="amount" class="form-label">{{ form.amount.label }}</label>
+                        <div class="input-group">
+                            <span class="input-group-text">R$</span>
+                            {{ form.amount(class="form-control") }}
+                        </div>
+                        {% if form.amount.errors %}
+                            <div class="text-danger mt-1">
+                                {% for error in form.amount.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="date" class="form-label">{{ form.date.label }}</label>
+                        {{ form.date(class="form-control", type="date") }}
+                        {% if form.date.errors %}
+                            <div class="text-danger mt-1">
+                                {% for error in form.date.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="payment_method" class="form-label">{{ form.payment_method.label }}</label>
+                        {{ form.payment_method(class="form-select") }}
+                        {% if form.payment_method.errors %}
+                            <div class="text-danger mt-1">
+                                {% for error in form.payment_method.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="invoice_number" class="form-label">{{ form.invoice_number.label }}</label>
+                        {{ form.invoice_number(class="form-control") }}
+                        {% if form.invoice_number.errors %}
+                            <div class="text-danger mt-1">
+                                {% for error in form.invoice_number.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="invoice_file" class="form-label">{{ form.invoice_file.label }}</label>
+                        {{ form.invoice_file(class="form-control") }}
+                        {% if form.invoice_file.errors %}
+                            <div class="text-danger mt-1">
+                                {% for error in form.invoice_file.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">Formatos aceitos: PDF, JPG, PNG</div>
+                    </div>
+                </div>
+                
+                <!-- Right Column -->
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="description" class="form-label">{{ form.description.label }}</label>
+                        {{ form.description(class="form-control", rows=4) }}
+                        {% if form.description.errors %}
+                            <div class="text-danger mt-1">
+                                {% for error in form.description.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Client fields - shown for income -->
+                    <div id="client-fields">
+                        <div class="mb-3">
+                            <label for="client_id" class="form-label">{{ form.client_id.label }}</label>
+                            {{ form.client_id(class="form-select") }}
+                            {% if form.client_id.errors %}
+                                <div class="text-danger mt-1">
+                                    {% for error in form.client_id.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Supplier fields - shown for expense -->
+                    <div id="supplier-fields" style="display: none;">
+                        <div class="mb-3">
+                            <label for="supplier_id" class="form-label">{{ form.supplier_id.label }}</label>
+                            {{ form.supplier_id(class="form-select") }}
+                            {% if form.supplier_id.errors %}
+                                <div class="text-danger mt-1">
+                                    {% for error in form.supplier_id.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="project_id" class="form-label">{{ form.project_id.label }}</label>
+                        {{ form.project_id(class="form-select") }}
+                        {% if form.project_id.errors %}
+                            <div class="text-danger mt-1">
+                                {% for error in form.project_id.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="service_order_id" class="form-label">{{ form.service_order_id.label }}</label>
+                        {{ form.service_order_id(class="form-select") }}
+                        {% if form.service_order_id.errors %}
+                            <div class="text-danger mt-1">
+                                {% for error in form.service_order_id.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="d-flex justify-content-end mt-3">
+                <a href="{{ url_for('finance.index') }}" class="btn btn-secondary me-2">Cancelar</a>
+                {{ form.submit(class="btn btn-primary") }}
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

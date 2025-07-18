@@ -1,0 +1,214 @@
+{% extends 'base.html' %}
+
+{% block title %}Configurações do Sistema | Unbug Solutions TI{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <div class="row">
+        <div class="col-md-6">
+            <h1 class="content-title">Configurações do Sistema</h1>
+        </div>
+        <div class="col-md-6 text-end">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb justify-content-end content-breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('security.index') }}">Segurança</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Configurações</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+</div>
+
+<!-- Menu de navegação da seção -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between flex-wrap">
+                    <a href="{{ url_for('security.index') }}" class="btn btn-outline-secondary m-1">
+                        <i class="fas fa-arrow-left me-2"></i> Voltar para Segurança
+                    </a>
+                    <a href="{{ url_for('security.users') }}" class="btn btn-primary m-1">
+                        <i class="fas fa-users-cog me-2"></i> Gerenciar Usuários
+                    </a>
+                    <button class="btn btn-success m-1" id="save-config-btn">
+                        <i class="fas fa-save me-2"></i> Salvar Configurações
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Configurações Gerais</h5>
+            </div>
+            <div class="card-body">
+                <form>
+                    <div class="mb-3">
+                        <label for="company_name" class="form-label">Nome da Empresa</label>
+                        <input type="text" class="form-control" id="company_name" value="Unbug Solutions TI">
+                    </div>
+                    <div class="mb-3">
+                        <label for="admin_email" class="form-label">Email do Administrador</label>
+                        <input type="email" class="form-control" id="admin_email" value="admin@unbug.com">
+                    </div>
+                    <div class="mb-3">
+                        <label for="timezone" class="form-label">Fuso Horário</label>
+                        <select class="form-select" id="timezone">
+                            <option value="America/Sao_Paulo" selected>America/Sao_Paulo (GMT-3)</option>
+                            <option value="America/Recife">America/Recife (GMT-3)</option>
+                            <option value="America/Manaus">America/Manaus (GMT-4)</option>
+                            <option value="America/Rio_Branco">America/Rio_Branco (GMT-5)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="date_format" class="form-label">Formato de Data</label>
+                        <select class="form-select" id="date_format">
+                            <option value="dd/MM/yyyy" selected>DD/MM/AAAA</option>
+                            <option value="MM/dd/yyyy">MM/DD/AAAA</option>
+                            <option value="yyyy-MM-dd">AAAA-MM-DD</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Segurança</h5>
+            </div>
+            <div class="card-body">
+                <form>
+                    <div class="mb-3">
+                        <label for="password_expiry" class="form-label">Expiração de Senhas (dias)</label>
+                        <input type="number" class="form-control" id="password_expiry" value="90">
+                    </div>
+                    <div class="mb-3">
+                        <label for="session_timeout" class="form-label">Timeout de Sessão (minutos)</label>
+                        <input type="number" class="form-control" id="session_timeout" value="30">
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="two_factor_auth" checked>
+                            <label class="form-check-label" for="two_factor_auth">Autenticação de Dois Fatores</label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="force_strong_password" checked>
+                            <label class="form-check-label" for="force_strong_password">Exigir Senhas Fortes</label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Email</h5>
+            </div>
+            <div class="card-body">
+                <form>
+                    <div class="mb-3">
+                        <label for="smtp_server" class="form-label">Servidor SMTP</label>
+                        <input type="text" class="form-control" id="smtp_server" value="smtp.example.com">
+                    </div>
+                    <div class="mb-3">
+                        <label for="smtp_port" class="form-label">Porta SMTP</label>
+                        <input type="number" class="form-control" id="smtp_port" value="587">
+                    </div>
+                    <div class="mb-3">
+                        <label for="smtp_username" class="form-label">Usuário SMTP</label>
+                        <input type="text" class="form-control" id="smtp_username" value="noreply@unbug.com">
+                    </div>
+                    <div class="mb-3">
+                        <label for="smtp_password" class="form-label">Senha SMTP</label>
+                        <input type="password" class="form-control" id="smtp_password" value="**********">
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="smtp_ssl" checked>
+                            <label class="form-check-label" for="smtp_ssl">Usar SSL/TLS</label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Backup e Manutenção</h5>
+            </div>
+            <div class="card-body">
+                <form>
+                    <div class="mb-3">
+                        <label for="backup_frequency" class="form-label">Frequência de Backup Automático</label>
+                        <select class="form-select" id="backup_frequency">
+                            <option value="daily" selected>Diário</option>
+                            <option value="weekly">Semanal</option>
+                            <option value="monthly">Mensal</option>
+                            <option value="never">Nunca</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="backup_time" class="form-label">Horário de Backup</label>
+                        <input type="time" class="form-control" id="backup_time" value="03:00">
+                    </div>
+                    <div class="mb-3">
+                        <label for="backup_retention" class="form-label">Retenção de Backups (dias)</label>
+                        <input type="number" class="form-control" id="backup_retention" value="30">
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="maintenance_mode">
+                            <label class="form-check-label" for="maintenance_mode">Modo de Manutenção</label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block additional_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Salvar configurações
+    document.getElementById('save-config-btn').addEventListener('click', function() {
+        // Simulate saving
+        const btn = this;
+        const originalText = btn.innerHTML;
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Salvando...';
+
+        setTimeout(() => {
+            btn.innerHTML = '<i class="fas fa-check me-2"></i> Salvo!';
+
+            setTimeout(() => {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+
+                // Show success message
+                const alertEl = document.createElement('div');
+                alertEl.className = 'alert alert-success alert-dismissible fade show';
+                alertEl.innerHTML = `
+                    <i class="fas fa-check-circle me-2"></i> Configurações salvas com sucesso!
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                `;
+
+                document.querySelector('.content-header').after(alertEl);
+            }, 1000);
+        }, 1500);
+    });
+});
+</script>
+{% endblock %}

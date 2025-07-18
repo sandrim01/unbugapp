@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block title %}Bem-vindo | Unbug Solutions TI{% endblock %}
+
+{% block content %}
+<div class="text-center mt-5">
+    <h1>Carregando...</h1>
+    <p>Você será redirecionado automaticamente.</p>
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Carregando...</span>
+    </div>
+</div>
+
+<script>
+    // Redirect to login page after a brief delay
+    window.onload = function() {
+        setTimeout(function() {
+            window.location.href = "{{ url_for('auth.login') }}";
+        }, 1000);
+    }
+</script>
+{% endblock %}

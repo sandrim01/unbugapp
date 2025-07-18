@@ -1,0 +1,197 @@
+{% extends 'base.html' %}
+
+{% block title %}Ordem de Serviço #{{ service_order.id }} | Unbug Solutions TI{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1 class="mb-3"><i class="fas fa-clipboard-list me-2"></i>Ordem de Serviço #{{ service_order.id }}</h1>
+        <p class="text-muted">{{ service_order.title }}</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('orders.index') }}" class="btn btn-secondary me-2">
+            <i class="fas fa-arrow-left"></i> Voltar
+        </a>
+        <a href="{{ url_for('orders.edit_order', order_id=service_order.id) }}" class="btn btn-warning">
+            <i class="fas fa-edit"></i> Editar
+        </a>
+        {% if current_user.can_delete() %}
+        <form action="{{ url_for('orders.delete_order', order_id=service_order.id) }}" method="post" class="d-inline" onsubmit="return confirm('Tem certeza que deseja excluir esta ordem de serviço?');">
+            <button type="submit" class="btn btn-danger ms-2">
+                <i class="fas fa-trash"></i> Excluir
+            </button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row">
+    <!-- Order Details Card -->
+    <div class="col-md-8">
+        <div class="card shadow mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Detalhes da Ordem</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Status:</strong> 
+                            {% if service_order.status == 'open' %}
+                                <span class="badge badge-open">Aberta</span>
+                            {% elif service_order.status == 'in_progress' %}
+                                <span class="badge badge-in-progress">Em Andamento</span>
+                            {% elif service_order.status == 'completed' %}
+                                <span class="badge badge-completed">Concluída</span>
+                            {% elif service_order.status == 'cancelled' %}
+                                <span class="badge badge-cancelled">Cancelada</span>
+                            {% endif %}
+                        </p>
+                        <p><strong>Prioridade:</strong>
+                            {% if service_order.priority == 'low' %}
+                                <span class="badge badge-low">Baixa</span>
+                            {% elif service_order.priority == 'medium' %}
+                                <span class="badge badge-medium">Média</span>
+                            {% elif service_order.priority == 'high' %}
+                                <span class="badge badge-high">Alta</span>
+                            {% endif %}
+                        </p>
+                        <p><strong>Cliente:</strong> 
+                            <a href="{{ url_for('clients.view_client', client_id=service_order.client.id) }}">
+                                {{ service_order.client.name }}
+                            </a>
+                        </p>
+                        <p><strong>Responsável:</strong> 
+                            <a href="{{ url_for('employees.view', employee_id=service_order.employee.id) }}">
+                                {{ service_order.employee.full_name }}
+                            </a>
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Data de Início:</strong> {{ service_order.start_date.strftime('%d/%m/%Y') }}</p>
+                        {% if service_order.completion_date %}
+                            <p><strong>Data de Conclusão:</strong> {{ service_order.completion_date.strftime('%d/%m/%Y') }}</p>
+                        {% else %}
+                            <p><strong>Data de Conclusão:</strong> <span class="text-muted">Não definida</span></p>
+                        {% endif %}
+                        <p><strong>Data de Criação:</strong> {{ service_order.created_at.strftime('%d/%m/%Y %H:%M') }}</p>
+                        <p><strong>Última Atualização:</strong> {{ service_order.updated_at.strftime('%d/%m/%Y %H:%M') }}</p>
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-md-12">
+                        <h6><strong>Descrição:</strong></h6>
+                        <p>{{ service_order.description }}</p>
+                        
+                        {% if service_order.notes %}
+                            <h6><strong>Observações:</strong></h6>
+                            <p>{{ service_order.notes }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Client Info Card -->
+    <div class="col-md-4">
+        <div class="card shadow mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-user me-2"></i>Informações do Cliente</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Nome:</strong> {{ service_order.client.name }}</p>
+                <p><strong>Email:</strong> <a href="mailto:{{ service_order.client.email }}">{{ service_order.client.email }}</a></p>
+                <p><strong>Telefone:</strong> {{ service_order.client.phone }}</p>
+                <p><strong>Contato:</strong> {{ service_order.client.contact_person or "Não informado" }}</p>
+                <p><strong>Endereço:</strong><br>
+                    {{ service_order.client.address }}<br>
+                    {{ service_order.client.city }}/{{ service_order.client.state }} - {{ service_order.client.zip_code }}
+                </p>
+                <a href="{{ url_for('clients.view_client', client_id=service_order.client.id) }}" class="btn btn-sm btn-primary">
+                    <i class="fas fa-external-link-alt me-1"></i> Ver Perfil Completo
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Items Used Section -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card shadow mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-tools me-2"></i>Itens Utilizados</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive mb-4">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th>SKU</th>
+                                <th>Quantidade</th>
+                                <th>Preço Unitário</th>
+                                <th>Subtotal</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if service_order.items_used %}
+                                {% set total = namespace(value=0) %}
+                                {% for item in service_order.items_used %}
+                                    {% set subtotal = item.quantity * item.inventory_item.unit_price %}
+                                    {% set total.value = total.value + subtotal %}
+                                    <tr>
+                                        <td>{{ item.inventory_item.name }}</td>
+                                        <td>{{ item.inventory_item.sku }}</td>
+                                        <td>{{ item.quantity }}</td>
+                                        <td>R$ {{ "%.2f"|format(item.inventory_item.unit_price|float) }}</td>
+                                        <td>R$ {{ "%.2f"|format(subtotal|float) }}</td>
+                                        <td>
+                                            <form action="{{ url_for('orders.remove_item', order_id=service_order.id, item_id=item.id) }}" method="post" class="d-inline" onsubmit="return confirm('Deseja remover este item?');">
+                                                <button type="submit" class="btn btn-sm btn-danger" title="Remover">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                                <tr class="table-active">
+                                    <td colspan="4" class="text-end"><strong>Total:</strong></td>
+                                    <td><strong>R$ {{ "%.2f"|format(total.value|float) }}</strong></td>
+                                    <td></td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td colspan="6" class="text-center">Nenhum item utilizado nesta ordem de serviço.</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Add Item Form -->
+                <form id="add-item-form" method="POST" action="{{ url_for('orders.add_item', order_id=service_order.id) }}">
+                    {{ form.hidden_tag() }}
+                    {{ form.service_order_id }}
+                    <h6 class="mb-3"><i class="fas fa-plus-circle me-2"></i>Adicionar Item</h6>
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-7">
+                            <label for="inventory_item_id" class="form-label">{{ form.inventory_item_id.label }}</label>
+                            {{ form.inventory_item_id(class="form-select") }}
+                        </div>
+                        <div class="col-md-3">
+                            <label for="quantity" class="form-label">{{ form.quantity.label }}</label>
+                            {{ form.quantity(class="form-control", value=1, min=1) }}
+                        </div>
+                        <div class="col-md-2">
+                            {{ form.submit(class="btn btn-primary w-100") }}
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

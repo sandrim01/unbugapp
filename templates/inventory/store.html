@@ -1,0 +1,201 @@
+{% extends 'base.html' %}
+
+{% block title %}Web Loja | Unbug Solutions TI{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1 class="mb-3"><i class="fas fa-store me-2"></i>Web Loja - Controle de Material</h1>
+        <p class="text-muted">Catálogo e controle de materiais do almoxarifado.</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('inventory.pdv') }}" class="btn btn-primary me-2">
+            <i class="fas fa-cash-register me-2"></i>PDV
+        </a>
+        <a href="{{ url_for('inventory.index') }}" class="btn btn-secondary">
+            <i class="fas fa-boxes me-2"></i>Voltar ao Almoxarifado
+        </a>
+    </div>
+</div>
+
+<!-- Search Bar -->
+<div class="card shadow mb-4">
+    <div class="card-body">
+        <div class="input-group">
+            <span class="input-group-text"><i class="fas fa-search"></i></span>
+            <input type="text" id="storeSearch" class="form-control" placeholder="Buscar por produtos...">
+            <button class="btn btn-primary" type="button">Pesquisar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Product Categories -->
+{% if category_items %}
+    {% for category, items in category_items.items() %}
+        <div class="card shadow mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-tag me-2"></i>{{ category }}</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for item in items %}
+                        <div class="col-md-4 mb-4">
+                            <div class="card h-100 product-card">
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ item.name }}</h5>
+                                    <p class="card-text text-muted mb-1">SKU: {{ item.sku }}</p>
+                                    <p class="card-text">{{ item.description | truncate(100) }}</p>
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span class="text-primary fw-bold">R$ {{ "%.2f"|format(item.unit_price|float) }}</span>
+                                        <span class="badge {% if item.quantity > item.minimum_stock %}bg-success{% elif item.quantity > 0 %}bg-warning{% else %}bg-danger{% endif %}">
+                                            Estoque: {{ item.quantity }}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="card-footer">
+                                    {% if item.quantity > 0 %}
+                                    <button type="button" class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#addToOrderModal{{ item.id }}">
+                                        <i class="fas fa-cart-plus me-1"></i> Adicionar à OS
+                                    </button>
+                                    {% else %}
+                                    <button type="button" class="btn btn-secondary w-100" disabled>
+                                        <i class="fas fa-exclamation-circle me-1"></i> Sem Estoque
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Add to Order Modal -->
+                            <div class="modal fade" id="addToOrderModal{{ item.id }}" tabindex="-1" aria-labelledby="addToOrderModalLabel{{ item.id }}" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="addToOrderModalLabel{{ item.id }}">Adicionar à Ordem de Serviço</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p><strong>Item:</strong> {{ item.name }}</p>
+                                            <p><strong>SKU:</strong> {{ item.sku }}</p>
+                                            <p><strong>Preço:</strong> R$ {{ "%.2f"|format(item.unit_price|float) }}</p>
+                                            <p><strong>Estoque Disponível:</strong> {{ item.quantity }}</p>
+
+                                            <form id="orderItemForm{{ item.id }}">
+                                                <div class="mb-3">
+                                                    <label for="orderSelect{{ item.id }}" class="form-label">Selecione a Ordem de Serviço:</label>
+                                                    <select class="form-select" id="orderSelect{{ item.id }}" required>
+                                                        <option value="">Selecione...</option>
+                                                        <!-- This would be populated via AJAX -->
+                                                    </select>
+                                                </div>
+
+                                                <div class="mb-3">
+                                                    <label for="quantityInput{{ item.id }}" class="form-label">Quantidade:</label>
+                                                    <input type="number" class="form-control" id="quantityInput{{ item.id }}" min="1" max="{{ item.quantity }}" value="1" required>
+                                                </div>
+                                            </form>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                            <button type="button" class="btn btn-primary" onclick="addToOrder({{ item.id }})">Adicionar</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+{% else %}
+    <div class="alert alert-info">
+        <h5><i class="fas fa-info-circle me-2"></i>Nenhum Item Cadastrado</h5>
+        <p>Não há itens disponíveis na loja. Adicione itens ao inventário para exibi-los aqui.</p>
+    </div>
+{% endif %}
+
+<script>
+// This is a mock function - in a real application, this would send an AJAX request to add the item to the order
+function addToOrder(itemId) {
+    const orderSelect = document.getElementById(`orderSelect${itemId}`);
+    const quantityInput = document.getElementById(`quantityInput${itemId}`);
+
+    if (!orderSelect.value) {
+        alert('Por favor, selecione uma ordem de serviço.');
+        return;
+    }
+
+    const quantity = parseInt(quantityInput.value);
+    if (isNaN(quantity) || quantity < 1) {
+        alert('Por favor, insira uma quantidade válida.');
+        return;
+    }
+
+    // In a real application, this would be an AJAX call to add the item to the order
+    alert(`Item adicionado à OS #${orderSelect.value} com quantidade ${quantity}.`);
+
+    // Close the modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById(`addToOrderModal${itemId}`));
+    modal.hide();
+}
+
+// This would fetch active service orders for the select dropdown
+document.addEventListener('DOMContentLoaded', function() {
+    const modals = document.querySelectorAll('[id^="addToOrderModal"]');
+
+    modals.forEach(modal => {
+        modal.addEventListener('show.bs.modal', function(event) {
+            const itemId = this.id.replace('addToOrderModal', '');
+            const orderSelect = document.getElementById(`orderSelect${itemId}`);
+
+            // Clear any existing options
+            orderSelect.innerHTML = '<option value="">Selecione...</option>';
+
+            // In a real application, this would be an AJAX call to fetch active service orders
+            // Mock data for demonstration
+            const mockOrders = [
+                { id: 1, title: 'Manutenção de Servidores' },
+                { id: 2, title: 'Instalação de Software' },
+                { id: 3, title: 'Suporte Técnico' }
+            ];
+
+            mockOrders.forEach(order => {
+                const option = document.createElement('option');
+                option.value = order.id;
+                option.textContent = `#${order.id} - ${order.title}`;
+                orderSelect.appendChild(option);
+            });
+        });
+    });
+
+    // Search functionality
+    const searchInput = document.getElementById('storeSearch');
+    searchInput.addEventListener('keyup', function() {
+        const searchTerm = this.value.toLowerCase();
+        const productCards = document.querySelectorAll('.product-card');
+
+        productCards.forEach(card => {
+            const productName = card.querySelector('.card-title').textContent.toLowerCase();
+            const productSku = card.querySelector('.text-muted').textContent.toLowerCase();
+            const productDesc = card.querySelector('.card-text:not(.text-muted)').textContent.toLowerCase();
+
+            if (productName.includes(searchTerm) || productSku.includes(searchTerm) || productDesc.includes(searchTerm)) {
+                card.closest('.col-md-4').style.display = '';
+            } else {
+                card.closest('.col-md-4').style.display = 'none';
+            }
+        });
+    });
+});
+</script>
+
+<style>
+.product-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+</style>
+{% endblock %}

@@ -1,0 +1,209 @@
+
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="mb-0">{{ supplier.name }}</h1>
+            <p class="text-muted">Fornecedor #{{ supplier.id }}</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{{ url_for('clients.suppliers') }}" class="btn btn-secondary me-2">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+            <a href="{{ url_for('clients.edit_supplier', supplier_id=supplier.id) }}" class="btn btn-warning">
+                <i class="fas fa-edit"></i> Editar
+            </a>
+        </div>
+    </div>
+    
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-info-circle me-1"></i>
+            Informações do Fornecedor
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Email:</strong> <a href="mailto:{{ supplier.email }}">{{ supplier.email }}</a></p>
+                    <p><strong>Telefone:</strong> {{ supplier.phone }}</p>
+                    <p><strong>Contato:</strong> {{ supplier.contact_person or 'Não informado' }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Endereço:</strong> {{ supplier.address }}</p>
+                    <p><strong>Cidade:</strong> {{ supplier.city }}</p>
+                    <p><strong>Estado:</strong> {{ supplier.state }}</p>
+                    <p><strong>CEP:</strong> {{ supplier.zip_code }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if financial_entries %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-money-bill-wave me-1"></i>
+            Movimentações Financeiras
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Tipo</th>
+                            <th>Descrição</th>
+                            <th>Valor</th>
+                            <th>Método</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in financial_entries %}
+                        <tr>
+                            <td>{{ entry.date.strftime('%d/%m/%Y') }}</td>
+                            <td>
+                                {% if entry.type == 'income' %}
+                                    <span class="badge bg-success">Receita</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Despesa</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ entry.description }}</td>
+                            <td class="{% if entry.type == 'income' %}text-success{% else %}text-danger{% endif %}">
+                                R$ {{ "%.2f"|format(entry.amount|float) }}
+                            </td>
+                            <td>{{ entry.payment_method }}</td>
+                            <td>
+                                {% if entry.invoice_number %}
+                                    <span class="badge bg-success">Faturado</span>
+                                {% else %}
+                                    <span class="badge bg-warning">Pendente</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if inventory_items %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-boxes me-1"></i>
+            Produtos Fornecidos
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Produto</th>
+                            <th>SKU</th>
+                            <th>Quantidade</th>
+                            <th>Preço Unitário</th>
+                            <th>Total</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in inventory_items %}
+                        <tr>
+                            <td>{{ item.name }}</td>
+                            <td>{{ item.sku }}</td>
+                            <td>{{ item.quantity }}</td>
+                            <td>R$ {{ "%.2f"|format(item.unit_price|float) }}</td>
+                            <td>R$ {{ "%.2f"|format(item.quantity * item.unit_price|float) }}</td>
+                            <td>
+                                {% if item.quantity > 0 %}
+                                    <span class="badge bg-success">Em Estoque</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Sem Estoque</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}dy">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>Quantidade</th>
+                            <th>Preço Unitário</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in inventory_items %}
+                        <tr>
+                            <td>{{ item.name }}</td>
+                            <td>{{ item.quantity }}</td>
+                            <td>R$ {{ "%.2f"|format(item.unit_price) }}</td>
+                            <td>
+                                {% if item.is_low_stock() %}
+                                <span class="badge bg-warning">Baixo Estoque</span>
+                                {% else %}
+                                <span class="badge bg-success">Normal</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if financial_entries and current_user.has_finance_access() %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-money-bill me-1"></i>
+            Movimentações Financeiras
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Descrição</th>
+                            <th>Valor</th>
+                            <th>Tipo</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in financial_entries %}
+                        <tr>
+                            <td>{{ entry.date.strftime('%d/%m/%Y') }}</td>
+                            <td>{{ entry.description }}</td>
+                            <td>R$ {{ "%.2f"|format(entry.amount) }}</td>
+                            <td>
+                                {% if entry.type == 'income' %}
+                                <span class="badge bg-success">Receita</span>
+                                {% else %}
+                                <span class="badge bg-danger">Despesa</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

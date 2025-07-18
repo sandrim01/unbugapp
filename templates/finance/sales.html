@@ -1,0 +1,147 @@
+{% extends 'base.html' %}
+
+{% block title %}Vendas | Unbug Solutions TI{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1 class="mb-3"><i class="fas fa-shopping-basket me-2"></i>Vendas</h1>
+        <p class="text-muted">Gerencie todas as vendas e receitas da empresa.</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('finance.create_entry') }}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>Nova Venda
+        </a>
+    </div>
+</div>
+
+<!-- Sales Table -->
+<div class="card shadow">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-list me-2"></i>Lista de Vendas</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Descrição</th>
+                        <th>Cliente</th>
+                        <th>Categoria</th>
+                        <th>Valor</th>
+                        <th>Nº Fatura</th>
+                        <th>Método Pagamento</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if incomes %}
+                        {% for income in incomes %}
+                        <tr>
+                            <td>{{ income.date.strftime('%d/%m/%Y') }}</td>
+                            <td>{{ income.description }}</td>
+                            <td>
+                                {% if income.client %}
+                                    <a href="{{ url_for('clients.view_client', client_id=income.client.id) }}">
+                                        {{ income.client.name }}
+                                    </a>
+                                {% else %}
+                                    <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ income.category }}</td>
+                            <td class="text-success">
+                                R$ {{ "%.2f"|format(income.amount|float) }}
+                            </td>
+                            <td>{{ income.invoice_number or "N/A" }}</td>
+                            <td>
+                                {% if income.payment_method == 'money' %}
+                                    Dinheiro
+                                {% elif income.payment_method == 'credit_card' %}
+                                    Cartão de Crédito
+                                {% elif income.payment_method == 'debit_card' %}
+                                    Cartão de Débito
+                                {% elif income.payment_method == 'bank_transfer' %}
+                                    Transferência Bancária
+                                {% elif income.payment_method == 'check' %}
+                                    Cheque
+                                {% else %}
+                                    Outro
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    {% if income.file_path %}
+                                    <a href="{{ url_for('static', filename=income.file_path) }}" target="_blank" class="btn btn-sm btn-info" title="Ver Anexo">
+                                        <i class="fas fa-file-alt"></i>
+                                    </a>
+                                    {% endif %}
+                                    <a href="{{ url_for('finance.edit_entry', entry_id=income.id) }}" class="btn btn-sm btn-warning" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    {% if current_user.can_delete() %}
+                                    <form action="{{ url_for('finance.delete_entry', entry_id=income.id) }}" method="post" class="d-inline" onsubmit="return confirm('Tem certeza que deseja excluir esta venda?');">
+                                        <button type="submit" class="btn btn-sm btn-danger" title="Excluir">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="8" class="text-center">Nenhuma venda encontrada.</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Stats -->
+<div class="row mt-4">
+    <div class="col-md-4">
+        <div class="card shadow">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">Resumo das Vendas</h5>
+            </div>
+            <div class="card-body">
+                {% set total = namespace(value=0) %}
+                {% set counts = namespace(items=0) %}
+                {% for income in incomes %}
+                    {% set total.value = total.value + income.amount %}
+                    {% set counts.items = counts.items + 1 %}
+                {% endfor %}
+                
+                <p>Total de Vendas: <strong>{{ counts.items }}</strong></p>
+                <p>Valor Total: <strong>R$ {{ "%.2f"|format(total.value|float) }}</strong></p>
+                
+                {% if incomes %}
+                <p>Média por Venda: <strong>R$ {{ "%.2f"|format((total.value / counts.items)|float) }}</strong></p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">Dicas para Gestão de Vendas</h5>
+            </div>
+            <div class="card-body">
+                <ul>
+                    <li>Emita notas fiscais para todas as vendas conforme exigido por lei</li>
+                    <li>Acompanhe o desempenho de vendas por cliente e categoria</li>
+                    <li>Estabeleça metas mensais e acompanhe sua realização</li>
+                    <li>Identifique clientes frequentes para oferecer programas de fidelidade</li>
+                    <li>Avalie a possibilidade de descontos para pagamentos à vista</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

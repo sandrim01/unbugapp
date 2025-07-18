@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Unbug Solutions TI{% endblock %}</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <!-- Google Fonts - Roboto -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='img/favicon.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='img/favicon.png') }}">
+    <link rel="shortcut icon" type="image/png" href="{{ url_for('static', filename='img/favicon.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='img/favicon.png') }}">
+
+    <!-- Chart.js for data visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    {% block additional_head %}{% endblock %}
+</head>
+<body class="light-theme">
+    {% if current_user.is_authenticated %}
+    <!-- Sidebar -->
+    <div id="sidebar" class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-brand">
+                <a href="{{ url_for('dashboard.index') }}" class="text-decoration-none text-white">
+                    <img src="{{ url_for('static', filename='img/unbug_symbol.png') }}" alt="Unbug Solutions TI Logo" class="logo-icon">
+                    <span>Unbug Solutions</span>
+                </a>
+            </div>
+        </div>
+
+        <ul class="sidebar-nav">
+            <li class="nav-item">
+                <a href="{{ url_for('dashboard.index') }}" class="{% if request.path.startswith('/dashboard') %}active{% endif %}">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                </a>
+            </li>
+
+            <li class="nav-item-header">Operações</li>
+
+            <li class="nav-item">
+                <a href="{{ url_for('orders.index') }}" class="{% if request.path == url_for('orders.index') %}active{% endif %}">
+                    <i class="fas fa-clipboard-list"></i> Ordens de Serviço
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ url_for('orders.projects') }}" class="{% if request.path == url_for('orders.projects') %}active{% endif %}">
+                    <i class="fas fa-project-diagram"></i> Projetos
+                </a>
+            </li>
+
+            {% if current_user.has_finance_access() %}
+            <li class="nav-item">
+                <a href="{{ url_for('finance.index') }}" class="{% if request.path.startswith('/finance') %}active{% endif %}">
+                    <i class="fas fa-money-bill-wave"></i> Finanças
+                </a>
+            </li>
+            {% endif %}
+
+            <li class="nav-item-header">Entidades</li>
+
+            <li class="nav-item">
+                <a href="{{ url_for('clients.index') }}" class="{% if request.path.startswith('/clients') %}active{% endif %}">
+                    <i class="fas fa-users"></i> Clientes
+                </a>
+            </li>
+
+            <li class="nav-item">
+                <a href="{{ url_for('clients.suppliers') }}" class="{% if request.path == url_for('clients.suppliers') %}active{% endif %}">
+                    <i class="fas fa-truck"></i> Fornecedores
+                </a>
+            </li>
+
+            <li class="nav-item">
+                <a href="{{ url_for('stock.index') }}" class="{% if request.path.startswith('/stock') %}active{% endif %}">
+                    <i class="fas fa-boxes"></i> Almoxarifado
+                </a>
+            </li>
+
+            <li class="nav-item">
+                <a href="{{ url_for('employees.index') }}" class="{% if request.path.startswith('/employees') %}active{% endif %}">
+                    <i class="fas fa-id-card"></i> Funcionários
+                </a>
+            </li>
+
+            {% if current_user.has_security_access() %}
+            <li class="nav-item-header">Sistema</li>
+
+            {% if current_user.is_management() %}
+            <li class="nav-item">
+                <a href="{{ url_for('reports.index') }}" class="{% if request.path.startswith('/reports') %}active{% endif %}">
+                    <i class="fas fa-file-alt"></i> Relatórios
+                </a>
+            </li>
+            {% endif %}
+
+            <li class="nav-item">
+                <a href="{{ url_for('security.index') }}" class="{% if request.path.startswith('/security') %}active{% endif %}">
+                    <i class="fas fa-shield-alt"></i> Segurança
+                </a>
+            </li>
+            {% endif %}
+
+            <li class="nav-item-header">Usuário: {{ current_user.employee.first_name if current_user.employee else current_user.username }}</li>
+
+            <li class="nav-item">
+                <a href="{{ url_for('auth.change_password') }}">
+                    <i class="fas fa-key"></i> Alterar Senha
+                </a>
+            </li>
+
+            <li class="nav-item">
+                <a href="{{ url_for('auth.logout') }}">
+                    <i class="fas fa-sign-out-alt"></i> Sair
+                </a>
+            </li>
+        </ul>
+
+    </div>
+
+    <!-- Sidebar Toggler for mobile -->
+    <button id="sidebar-toggler" class="sidebar-toggler">
+        <i class="fas fa-bars"></i>
+    </button>
+    {% endif %}
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- App Header -->
+        <header class="app-header">
+            <div class="container-fluid">
+    {% if request.endpoint != 'dashboard.index' %}
+    <div class="row mb-3">
+        <div class="col">
+            <button onclick="history.back()" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Voltar
+            </button>
+        </div>
+    </div>
+    {% endif %}
+                <div class="row align-items-center">
+                    <div class="col-md-4 d-none d-md-block">
+                        <div class="header-date">
+                            <i class="fas fa-calendar-alt me-2"></i>
+                            <span id="header-date"></span>
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-center">
+                        <div class="header-logo">
+                            <img src="{{ url_for('static', filename='img/unbug_horizontal.png') }}" alt="Unbug Solutions TI">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="header-user-menu d-flex justify-content-end align-items-center">
+                            <button class="btn btn-link text-decoration-none me-3" id="header-theme-toggle">
+                                <i class="fas fa-moon"></i>
+                            </button>
+                            <div class="dropdown">
+                                <button class="header-user-button dropdown-toggle" type="button" id="userMenuDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fas fa-user-circle me-2"></i>
+                                    <span class="d-none d-sm-inline">{{ current_user.employee.first_name if current_user.employee else current_user.username }}</span>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenuDropdown">
+                                    <li class="dropdown-item disabled">
+                                        <small class="text-muted">{{ current_user.get_role_display() }}</small>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('auth.change_password') }}"><i class="fas fa-key me-2"></i>Alterar Senha</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}"><i class="fas fa-sign-out-alt me-2"></i>Sair</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="container py-4">
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <!-- Page Content -->
+            {% block content %}{% endblock %}
+        </main>
+
+        <!-- Footer -->
+        {% if current_user.is_authenticated %}
+        <footer class="mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="footer-logo-container mb-2">
+                        <img src="{{ url_for('static', filename='img/unbug_horizontal.png') }}" alt="Unbug Solutions TI" class="footer-logo">
+                    </div>
+                    <p>Soluções inteligentes para sua empresa.</p>
+                    <p><i class="fas fa-envelope me-2"></i>unbugsolutionsti@gmail.com</p>
+                    <p><i class="fas fa-phone me-2"></i>(28) 99992-8442</p>
+                </div>
+                <div class="col-md-4">
+                    <h5>Links</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="{{ url_for('dashboard.index') }}"><i class="fas fa-chart-line me-2"></i>Dashboard</a></li>
+                        <li><a href="{{ url_for('orders.index') }}"><i class="fas fa-tasks me-2"></i>Ordens</a></li>
+                        <li><a href="{{ url_for('clients.index') }}"><i class="fas fa-users me-2"></i>Clientes</a></li>
+                        <li><a href="{{ url_for('stock.index') }}"><i class="fas fa-boxes me-2"></i>Almoxarifado</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <h5>Redes Sociais</h5>
+                    <ul class="list-unstyled social-links">
+                        <li><a href="https://facebook.com/unbugsolutionsti" target="_blank"><i class="fab fa-facebook me-2"></i>Facebook</a></li>
+                        <li><a href="https://tiktok.com/@unbugsolutionsti" target="_blank"><i class="fab fa-tiktok me-2"></i>TikTok</a></li>
+                        <li><a href="https://instagram.com/unbugsolutionsti" target="_blank"><i class="fab fa-instagram me-2"></i>Instagram</a></li>
+                        <li><a href="https://youtube.com/unbugsolutionsti" target="_blank"><i class="fab fa-youtube me-2"></i>YouTube</a></li>
+                    </ul>
+                </div>
+            </div>
+            <hr>
+            <div class="row">
+                <div class="col-md-12 text-center">
+                    <p>&copy; 2025 UnBug Solutions TI. Todos os direitos reservados.</p>
+                </div>
+            </div>
+        </div>
+        </footer>
+        {% endif %}
+    </div> <!-- Fecha main-content -->
+
+    <!-- Bootstrap JS with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+
+    {% block additional_scripts %}{% endblock %}
+</body>
+</html>

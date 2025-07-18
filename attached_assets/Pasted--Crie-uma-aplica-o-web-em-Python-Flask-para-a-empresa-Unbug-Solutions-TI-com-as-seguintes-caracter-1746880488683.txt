@@ -1,0 +1,67 @@
+“Crie uma aplicação web em Python/Flask para a empresa Unbug Solutions TI, com as seguintes características:
+
+1. Autenticação & Usuários
+
+    Login sem página de registro: as contas só são criadas ao adicionar um funcionário.
+
+    Credenciais pré-definidas:
+
+        admin / admin123 → acesso total
+
+        ceounbug / unbug123, operacoesunbug / unbug123, rhunbug / unbug123 → acesso a todas as áreas, exceto segurança
+
+        perfil funcionário (dinâmico) → pode criar/editar, mas não acessar finanças, segurança, nem excluir registros
+
+    Todos podem alterar sua senha a qualquer momento
+    Replit Docs
+    Replit Docs
+
+2. Páginas & Funcionalidades
+
+    Dashboard: visão geral dos principais indicadores da empresa (OS abertas, projetos em andamento, saldo financeiro, inventário crítico)
+    Replit Docs
+
+    Ordens de Serviço & Projetos: criar, editar, listar, buscar por filtros (status, data, responsável)
+    Replit Docs
+    DEV Community
+
+    Finanças: gestão de entradas e saídas, com sub-seções para compras (upload de nota fiscal) e vendas (emissão de NF-e)
+    Medium
+    Medium
+
+    Clientes & Fornecedores: CRUD completo com detalhes de contato e histórico de OS/ compras
+    nickymarino.com
+
+    Funcionários: CRUD e associação de credenciais de login ao perfil
+    nickymarino.com
+
+    Inventário (Almoxarifado & Webloja): subpastas para controle de estoque, PDV simples para retirada de materiais e serviços vinculados às OS
+    DEV Community
+
+    Segurança: apenas acessível a admin e gerência
+    Replit Docs
+
+3. Aspectos Técnicos
+
+    Flask com Blueprints para modularização
+    Replit Docs
+
+    SQLite + SQLAlchemy (ORM)
+    Replit Docs
+
+    Templates Jinja2 + Bootstrap para front-end responsivo
+    nickymarino.com
+
+    Alternância de tema (claro/escuro) ao lado do perfil do usuário
+    Replit Docs
+
+    Rodapé com links para redes sociais e e-mail da empresa
+    Replit Docs
+
+    Deploy com autoscaling no Replit
+    Replit Docs
+
+    Integração GitHub: todo commit deve disparar push automático do banco e código
+    Replit Docs
+
+Objetivo: gerar uma aplicação robusta, escalável e fácil de manter, que atenda completamente às necessidades operacionais da Unbug Solutions TI.”

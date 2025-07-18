@@ -1,0 +1,189 @@
+
+{% extends 'base.html' %}
+
+{% block title %}Gerenciamento de Usuários | Unbug Solutions TI{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <div class="row">
+        <div class="col-md-6">
+            <h1 class="content-title">Gerenciamento de Usuários</h1>
+        </div>
+        <div class="col-md-6 text-end">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb justify-content-end content-breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('security.index') }}">Segurança</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Usuários</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0">Usuários do Sistema</h5>
+        <a href="{{ url_for('security.new_user') }}" class="btn btn-primary">
+            <i class="fas fa-plus me-1"></i> Novo Usuário
+        </a>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Usuário</th>
+                        <th>Nome</th>
+                        <th>Email</th>
+                        <th>Departamento</th>
+                        <th>Cargo</th>
+                        <th>Nível de Acesso</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if users %}
+                        {% for user in users %}
+                        <tr>
+                            <td>{{ user.username }}</td>
+                            <td>{{ user.employee.full_name if user.employee else 'N/A' }}</td>
+                            <td>{{ user.email }}</td>
+                            <td>{{ user.employee.department if user.employee else 'N/A' }}</td>
+                            <td>{{ user.employee.position if user.employee else 'N/A' }}</td>
+                            <td>
+                                <span class="badge bg-primary">{{ user.get_role_display() }}</span>
+                            </td>
+                            <td>
+                                {% if user.is_active %}
+                                    <span class="badge bg-success">Ativo</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Inativo</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{{ url_for('security.edit_user', id=user.id) }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <form action="{{ url_for('security.toggle_user', id=user.id) }}" method="POST" class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-outline-{{ 'danger' if user.is_active else 'success' }}">
+                                            <i class="fas fa-{{ 'ban' if user.is_active else 'check' }}"></i>
+                                        </button>
+                                    </form>
+                                    <form action="{{ url_for('security.reset_password', id=user.id) }}" method="POST" class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-outline-warning">
+                                            <i class="fas fa-key"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="8" class="text-center">
+                                <div class="alert alert-info mb-0">
+                                    <i class="fas fa-info-circle me-2"></i> Nenhum usuário encontrado.
+                                </div>
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Distribuição por Nível de Acesso</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="roleChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Distribuição por Departamento</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="deptChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block additional_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Dados para gráfico de papéis
+    const roleCtx = document.getElementById('roleChart').getContext('2d');
+    new Chart(roleCtx, {
+        type: 'pie',
+        data: {
+            labels: ['Administrador', 'Gerência', 'Funcionário'],
+            datasets: [{
+                data: [
+                    {{ users|selectattr('role', 'eq', 'admin')|list|length }},
+                    {{ users|selectattr('role', 'eq', 'management')|list|length }},
+                    {{ users|selectattr('role', 'eq', 'employee')|list|length }}
+                ],
+                backgroundColor: ['#0a6ebd', '#95c93d', '#17a2b8']
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+    
+    // Dados para gráfico de departamentos
+    const departments = [
+        {% for user in users %}
+            {% if user.employee and user.employee.department %}
+                "{{ user.employee.department }}",
+            {% endif %}
+        {% endfor %}
+    ].filter((value, index, self) => self.indexOf(value) === index);
+    
+    const deptCounts = departments.map(dept => {
+        return {{ users|selectattr('employee')|selectattr('employee.department', 'defined')|list|length }};
+    });
+    
+    const deptCtx = document.getElementById('deptChart').getContext('2d');
+    new Chart(deptCtx, {
+        type: 'bar',
+        data: {
+            labels: departments,
+            datasets: [{
+                label: 'Número de Usuários',
+                data: deptCounts,
+                backgroundColor: '#0a6ebd'
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        precision: 0
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}
